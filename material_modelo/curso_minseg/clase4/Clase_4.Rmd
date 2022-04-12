@@ -1,0 +1,291 @@
+---
+title: "Clase 4"
+author: "Domenech Burin, Laia"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+theme: Boadilla
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
+```
+
+## El mundo tidyverse: vol 2
+
+- La clase pasada vimos algunas de las funciones que vienen incluidas en el paquete tidyverse. Estuvimos trabajando con operaciones sobre columnas y filtrados. 
+- La clase de hoy vamos a seguir con dplyr, viendo cómo usar funciones para crear medidas resumen, unir dataframes y "pivotearlos". 
+- También vamos a introducir el paquete `lubridate` para trabajar con formatos de fecha.
+
+Primero, vamos a importar la base de homicidios dolosos y el paquete tidyverse: 
+```{r}
+library(tidyverse)
+
+df <- readxl::read_excel("./data/Integrado_HD_base_usuaria_2017-2020.xlsx")
+
+```
+
+
+## `group_by` + `summarize()`
+
+* `group_by` cambia la unidad de análsis del dataset a grupos. Así, al llamar a cualqyuer verbo de `dplyr` se aplica "por grupo",
+* combinándolo con `summarize()`, nos permite hacer una tabla con una medida resumen de las variables que querramos. 
+
+Por ejemplo, podemos hacer el conteo de frecuencias de los tipos de arma utilizadas:
+```{r}
+df %>%
+        group_by(clase_arma)%>%
+        summarize(n=n())
+```
+
+El tipo de arma utilizado según la provincia
+```{r}
+df %>%
+        group_by(provincia, clase_arma)%>%
+        summarize(n=n())
+```
+La media de víctimas según el año: 
+```{r}
+df %>%
+        group_by(anio)%>%
+        summarize(mean_vic=round(mean(cant_vic,na.rm=TRUE)),
+                  mean_inc = round(mean(cant_inc, na.rm=TRUE)))
+```
+
+* Si quiero seguir trabajando con el objeto que está agrupado sin esos grupos, tengo que usar la función `ungroup()`
+
+## `pivot_longer` y `pivot_wider` 
+- `pivot_longer` "alarga" los datos convirtiendo columnas a filas. Tiene los siguientes parámetros:
+        + `cols`: elijo las columnas que quiero pasar a filas
+        + `names_to`: indico el nombre de la columna que va a contener las variables elegidas
+        + `values_to`: indico el nombre de la columna que va a contener los valores de las variables
+
+```{r}
+medidas_resumen <- df %>%
+  group_by(provincia) %>% 
+  summarise(media_inc = mean(cant_inc, na.rm = TRUE),
+            mediana_inc = median(cant_inc, na.rm = TRUE)) %>% 
+  select(provincia, 
+         media_inc, mediana_inc) 
+
+pivot_longer_resumen <- medidas_resumen%>% 
+  pivot_longer(cols = c(media_inc, mediana_inc), 
+               names_to = "variable", 
+               values_to = "valor")
+
+pivot_longer_resumen
+```
+
+- `pivot_wider` es la operación inversa. Crea variables a partir de filas, y "alarga" la base de datos. 
+  +`id_cols`: la columna de ID, que no queremos que pierda su formato
+  +`names_from`: indico en qué columna están los nombres de las variables
+  + `values_from`: indico en qué columna están los valores de las variables
+
+```{r}
+pivot_longer_resumen%>% pivot_wider(id_cols= provincia, 
+                                names_from=variable,
+                                values_from = valor)
+```
+
+## `join()`
+
+- Esta función sirve para unir un dataframe x con un dataframe y a partir de un identificador común. Existen distintos tipos de join:
+  + `inner_join():` incluye todas las filas que estén en x e y.
+  + `left_join():` incluye todas las filas que estén en x.
+  + `right_join():` incluye todas las filas que estén en y.
+  + `full_join():` incluye todas las filas que estén en x o y.
+
+![Lógica del join](./imgs/joins.jpg)
+Por ejemplo, supongamos que queremos agregar a esta base de datos la información geográfica de cada provincia para poder marcarla en un mapa. Vamos a usar una base de datos del [IGN](https://www.ign.gob.ar/NuestrasActividades/InformacionGeoespacial/CapasSIG).
+
+```{r}
+geo <- sf::read_sf('./data/pxlocdatos.shp') %>% select(codpcia, coddpto, geometry)
+head(geo)
+```
+
+```{r}
+df_merged <- df %>% left_join(geo, by = c("Cod_INDEC_Prov" = "codpcia", "codigo_departamento" = "coddpto")) 
+
+colnames(df_merged)
+```
+
+## Fechas 
+
+- Tenemos tres tipos de variables de tiempo principales en R:     
+  + **Date:** (Sólo Año, Mes y Día).   
+  + **Time:** (Un horario, sin especificar de que día es)  
+  + **Date-time:** (Año, Mes, Día y horario)    
+  
+Veamos el formato de nuestras fechas en el dataframe que estamos trabajando:
+```{r}
+class(df$fecha_hecho)
+```
+Este es un formato de dato que manejar la hora y la fecha. El almacenamiento interno de una fecha en formato POSIXct es el número de segundos transcurridos desde el 1 de enero de 1970. Para fechas anteriores se usan números negativos.
+
+### `lubridate` 
+
+Es un paquete que está hecho para hacer más fácil el trabajo con fechas y horarios. Algunas de sus funcionalidades principales son: 
+
+- Construir variables de tipo fecha a partir de números o caracteres    
+- Extraer información de variables ya constituídas como fechas   
+- Realizar operatorias con fechas (ej: calculo de distancias temporales entre dos registros)   
+
+```{r}
+library(lubridate)
+```
+
+Mediante la combinacion de los caracteres **dmy_hms** que representan a día(d), mes(m), año(y), hora(h), minuto(m) y segundo(s) podemos convertir un número (o un string) hacia una fecha.   
+
+```{r}
+
+fecha_1 <- "30 de abril 2021"
+
+class(fecha_1)
+
+fecha_1_formato <- dmy(fecha_1)
+
+class(fecha_1_formato)
+```
+También podría crear una fecha con horas, minutos y segundos:
+
+```{r}
+fecha_2 <- "2020/08/04 13:40:43"
+
+fecha_2<-ymd_hms(fecha_2)
+class(fecha_2)
+```
+
+Y para formatos menos estandarizados, se puede usar la función `parse_date_time()`
+
+```{r}
+fecha_3 <- c("Oct 4", "May 20", "Feb 15")
+
+parse_date_time(fecha_3, orders = 'md')
+```
+
+También podemos **extraer** información de las fechas. Por ejemplo, podemos desagregar la fecha de trámite en:
+
+- día (de la semana y el número)
+- mes (con nombre o número)
+- año
+
+```{r}
+data_ejemplo_fecha <- df %>% select(fecha_hecho) %>%
+        mutate(dia = wday(fecha_hecho),
+               dia_semana = wday(fecha_hecho, label = TRUE),
+               mes = month(fecha_hecho),
+               mes_nombre = month(fecha_hecho, label =TRUE),
+               anio = year(fecha_hecho))
+
+head(data_ejemplo_fecha)
+```
+Finalmente, podemos hacer distintas operaciones sobre las fechas. Por ejemplo, podemos calcular la cantidad de tiempo que pasó entre el primer registro de trámite y el último:
+
+```{r}
+max(df$fecha_hecho)-min(df$fecha_hecho)
+```
+Podemos agregarle días, meses, o años a una fecha:
+
+```{r}
+fecha_4 <- df$fecha_hecho[4]
+
+fecha_4
+
+fecha_4+days(4)
+fecha_4+months(5)
+fecha_4+years(2)
+```
+## Programación funcional 
+
+En este material veremos algunas herramientas un poco más avanzadas que sirven para escalar procedimientos que vimos anteriormente y/o para automatizar (parte de) nuestro trabajo. La idea es un primer acercamiento a herramientas que  evitan tener que constantemente copiar nuestro código y modificar algunos paramentos o variables, cada vez que queramos realizar procedimientos parecidos. 
+
+### if
+
+- La función *if* se utilizará para correr código condicionalmente.   
+
+- Su funcionamiento es el siguiente:     
+```if(condicion){codigo a ejecutar si se cumple la condición}```
+
+```{r,warning=FALSE}
+if( 10+5 == 15){
+  print("Perfecto")
+}
+
+```
+
+```{r,warning=FALSE}
+if( 10+5 == 148.24){
+  print("Error")
+}
+
+```
+
+### if + else
+
+- La función **if** también puede utilizarse para indicar la ejecución de uno u otro fragmentos de código según se cumpla o no una condición. Para ello, agregamos **`else{}`** y el código a ejecutar en caso de NO cumplimiento de la condición, de la siguiente manera:   
+
+```if(condicion){codigo a ejecutar si se cumple la condición} else {codigo a ejecutar si NO se cumple la condición}``` 
+
+- Veamos un ejemplo. Queremos que nuestro código nos indique si la fecha de ejecución del código coincide con la de la última actualización de la base de datos. Caso contrario, queremos que se nos indique la diferencia de tiempo entre ambas. 
+```{r}
+ultima.actualiz.base<- max(df$fecha_hecho)
+ultima.actualiz.base
+```
+- ¿Es dicha fecha igual a la fecha actual de ejecución del código? Para ello podemos usar la función **Sys.Date()** de RBase
+```{r}
+if (ultima.actualiz.base == Sys.Date()) {
+    "Datos al día de hoy"
+} else{
+  Sys.Date() - ultima.actualiz.base 
+}
+```
+### loops
+
+- Los **loops** son estructuras de código que sirven para repetir un conjunto de operaciones en un intervalo determinado. Por ejemplo: 
+```{r}
+for (x in 1:10){
+        print(x*5)
+}
+```
+
+- La lógica del loop es:
+  + `x` es leído como cada uno de los valores del vector `1:10`
+  + como el primer valor de la secuencia que definimos es 1, el loop empieza reemplazando el 1 por x y corre todo lo que está entre llaves `{}`. 
+- Otra forma de escribir lo que está haciendo el loop es: 
+```{r}
+(1:10)*5
+```
+- Los `while` loops empiezan testeando una condición. Si la condición es verdadera ejecutan el bloque de código debajo del `while`.  Una vez que se ejecuta el bloque, se vuelve a testar la condición,
+- Cuando la condición se hace falsa sale del loop.
+```{r, highlight=TRUE, prompt=TRUE, strip.white=FALSE, results='markup', collapse=TRUE, tidy=TRUE}
+count<-0
+while(count < 4){
+        print(count)
+        count<-count + 1 
+}
+```
+- En los loops existen **estructuras de control** para saltear partes del mismo o salir de él aún cuando la condición que definimos no se cumpla. 
+  + ``next`` se usa para saltear una iteración en un loop
+```{r}
+for (i in 1:6){
+        if (i<=2){
+                next
+        }
+        print(i)
+}
+```
+  + `break` se usa para salir de un loop (aún cuando una condición no se cumpla).
+```{r}
+for (i in 1:6){
+        if (i>2){
+                break
+        }
+        print(i)
+}
+```
+

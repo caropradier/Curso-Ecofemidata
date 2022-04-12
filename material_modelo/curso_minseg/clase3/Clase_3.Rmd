@@ -1,0 +1,249 @@
+---
+title: "Clase 3"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+author: "Domenech Burin, Laia"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+theme: Boadilla
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
+```
+
+## El mundo tidyverse
+
+- La clase pasada cerramos la parte práctica instalando el paquete **Tidyverse**. Sin embargo, al hacerlo no estaban instalando solo un paquete, sino una colección de paquetes de R que están diseñados para el análisis de datos. 
+- La lógica de tener estos paquetes juntos es que todos ellos comparten la misma filosofía, gramática, y estructuras de datos. 
+
+![Mundillo tidyverse](./imgs/tidyverse.jpg)
+
+- Los principales paquetes que están en este mundo son
+  + `magrittr`: que introduce la **pipe** (%>%)
+  + `dplyr`: orientado a la maniplulación de bases de datos
+  + `tidyr`: para la limpieza de datos
+  + `readr`: para la lectura de bases de datos
+  + `purr`: provee herramientas para trabajar con funciones sobre vectores
+  + `stringr`: orientado a facilitar el trabajo con datos de texto
+  + `forcats`: orientado a facilitar el trabajo con factores
+        
+### ¿Por qué tidyverse? 
+
+- Está diseñado para ser leído y usado de manera simple por seres humanos. La gramática es intuitiva y la mayoría de sus funcionalidades son fáciles de usar. 
+- Sus funciones no están pensadas para una tarea específica, sino para todo un flujo de trabajo: desde la importación de datos hasta la comunicación de resultados. 
+- Su comunidad está basada en los principios de código abierto y colaborativo. Los mismos diseñadores de los paquetes tienen [muchísimas fuentes](https://www.tidyverse.org/learn/) para aprender a usarlos, y disponen del código abierto de cada paquete en GitHub. 
+
+Para empezar a trabajar con el paquete, tenemos que introducirlo en la sesión con la función `library()`: 
+
+```{r, echo=TRUE, warning=TRUE}
+library(tidyverse)
+```
+
+## Pipes: la gramática básica de tidyverse
+
+Más arriba mencionamos que el paquete `magrittr` introduce la pipe y la señalamos como este símbolo `%>%`. La pipe es una **forma de escribir** del mundo tidyverse, que indica que vamos a realizar de terminada operación sobre el objeto que está a la izquierda. Sirve para indicar una secuencia de acciones. 
+
+Por ejemplo, tomemos la base de datos de homicidios dolosos entre 2017 y 2020. Para sacar la tabla de frecuencias de casos por provincia haríamos lo siguiente: 
+```{r}
+df <- readxl::read_excel('./data/Integrado_HD_base_usuaria_2017-2020.xlsx')
+
+table(df$provincia)
+```
+
+Ahora, con una pipe...
+```{r}
+df$provincia %>%
+ table()
+```
+
+Las funciones pueden concatenarse, y esta es la principal gracia del uso de las pipes. 
+
+```{r}
+df$provincia%>%
+        table()%>%
+        prop.table()*100
+```
+
+
+## dplyr
+
+Vimos que este paquete de tidyverse está orientado al manejo de bases de datos. Tiene 5 funciones básicas que resuelven el 90% de nuestros problemas a la hora de limpiar y procesas bases: 
+
+1. `select()`: que selecciona y descarta variables
+2. `filter()`: selecciona y descarta según filas
+3. `mutate()`: crea o edita variables
+4. `rename()`: renombra variables
+5. `summarise()`: colapsa los valores a un solo resumen
+
+Todas pueden ser usadas en conjunto con `group_by()` que cambia el objeto de cada función: en lugar de operar sobre todo el dataset, lo hace al interior de cada grupo definido.
+
+### select()
+
+- Esta función únicamente requiere poner el nombre de las columnas que elegimos. Podemos elegir según nombre o posición. 
+- La forma básica de esta función es `select(nombre_de_la_columna)`.
+
+```{r}
+select_prueba_1 <- df %>% select(provincia)
+head(select_prueba_1)
+```
+- Puedo seleccionar más de una columna con la coma: 
+
+```{r}
+select_prueba_2 <- df %>% select(provincia, departamento, anio)
+
+head(select_prueba_2)
+```
+
+- También se puede seleccionar un intervalo de columnas, usando el `:`
+
+```{r}
+select_prueba_3 <- df %>% select(anio, departamento, provincia, tipo_lugar:otro_motivo_origen_registro)
+
+head(select_prueba_3)
+```
+
+- Podemos hacer una selección por **posición de la columna**: 
+
+```{r}
+select_prueba_4 <- df %>% select(1:5)
+
+head(select_prueba_4)
+```
+
+- Se puede hacer una anti-selección (o sea, elegir todas las columnas menos algunas especificadas)
+```{r}
+ncol(df)
+
+select_prueba_5 <- df %>% select(-c(federal, radio_censal))
+
+ncol(select_prueba_5)
+```
+
+- También, se pueden seleccionar columnas según criterios con funciones auxiliares:
+  + `starts_with` : selecciona columnas que empiecen con el string que pasemos.
+  + `ends_with` : selecciona columnas que terminen con el string que le pasemos. 
+  + `contains` : selecciona columnas que contengan la palabra que indicamos. 
+```{r}
+select_prueba_6 <- df %>% select(ends_with("victima"))
+
+head(select_prueba_6)
+```
+
+```{r}
+select_prueba_7 <- df %>% select(contains("inculpado"))
+
+head(select_prueba_7)
+```
+
+### filter()
+
+- Esta función tiene el siguiente esquema: `filter(CONDICIÓN)`
+- La clase 1 vimos los distintos operadores (lógicos, arimétricos, relacionales) que podemos usar para escribir estos formatos condicionales. 
+
+Supongamos que queremos quedarnos con los registros de homicidios que se realizaron de 2019 en adelante:
+
+```{r}
+base_filtrada_1 <- df %>% filter(anio >= 2019)
+
+table(df$anio)
+table(base_filtrada_1$anio)
+```
+
+O si quisiéramos nada más los registros de homicidios sucedidos en domicilios particulares:
+
+```{r}
+base_filtrada_2 <- df %>% filter(tipo_lugar == "Domicilio particular")
+
+table(df$tipo_lugar)
+table(base_filtrada_2$tipo_lugar)
+```
+
+Los condicionales también pueden combinarse. Podríamos traer todos los registros sucedidos en domicilios particulares y la vía pública:
+
+```{r}
+base_filtrada_3 <- df %>% filter(tipo_lugar == "Vía pública" | tipo_lugar == "Domicilio particular")
+
+table(df$tipo_lugar)
+table(base_filtrada_3$tipo_lugar)
+```
+
+También podemos combinar los operadores lógicos para hacer un filtrado por condiciones múltiples. Por ejemplo, si quisiéramos todos los registros de homicidios en domicilio particular o la vía pública realizados en Buenos Aires, podríamos hacer esto. 
+
+```{r}
+base_filtrada_4 <- df  %>% filter(tipo_lugar %in% c("Vía pública", "Domicilio particular") & provincia == "BUENOS AIRES")
+
+table(base_filtrada_4$provincia, base_filtrada_4$tipo_lugar)
+```
+
+El filtrado también puede aplicarse sobre columnas para quedarnos sólo con las filas que tienen valores -es decir, borrar los NA. 
+
+Vamos a borrar los casos que tienen NA en la categoría `otro_en_ocasion_otro_delito`, para quedarnos únicamente con los casos de homicidios que se hicieron en relación a otro delito. Probemos que pasa si usamos el operador `!=`
+```{r}
+base_filtrada_5 <- df  %>% filter(otro_en_ocasion_otro_delito != NA) 
+nrow(base_filtrada_5)
+```
+
+¡Nos borró todas las variables! Pero esto no está bien, ya que vimos que esta columna tenía varios valores. ¿Qué sucedió? 
+
+Resulta que los NA son bastante tramposos en R. Casi cualquier operación con uno de ellos va a devolver otro NA, y es por esto que no debemos trabajar con operadores a la hora de filtrarlos, sino que debemos usar la función `is.na()`
+```{r}
+base_filtrada_5 <- df  %>% filter(!is.na(otro_en_ocasion_otro_delito))
+nrow(base_filtrada_5)
+```
+
+### rename()
+
+- Esta función solo requiere indicar `NOMBRE_NUEVO = NOMBRE_VIEJO`
+
+```{r}
+df %>% rename(otro_delito_categorias = otro_en_ocasion_otro_delito) %>% select(Id_hecho, en_ocasion_otro_delito, otro_delito_categorias)
+```
+
+### mutate()
+
+- Esta función nos permite crear y modificar columnas.
+- Su sintaxis es `mutate(nombre_de_la_columna = valores_de_la_columna)`  
+
+Por ejemplo, podemos crear una columna simple con el nombre de la base:
+```{r}
+df <- df %>% mutate(columna_ejemplo = "Registro de homicidios dolosos 2017-2020") 
+table(df$columna_ejemplo)
+```
+
+Pero también podemos hacer algo más util. Por ejemplo, si echamos un vistazo a la información de la provincia vemos que estos valores están todos en mayúscula:
+
+```{r}
+df %>% select(provincia) %>% head()
+```
+
+Vamos a guardar los valores como nombres propios con la función `str_to_title()` del paquete `stringr`.
+
+```{r}
+df %>% mutate(provincia = str_to_title(provincia))%>%
+        select(provincia) %>%
+        head()
+```
+
+- Es una función muy útil a la hora de recodificar variables, sobre todo cuando la usamos con la función `case_when()`. Supongamos que queremos agrupar los tipos de relaciones de víctima con el inculpado en siete grupos: familiar, laboral, de pareja, sin relación, otros, sin datos y no corresponde. 
+```{r}
+df <- df %>% mutate(
+        relacion_agrup = case_when(
+                relacion_victima_inculpado %in% c("Hermano/a", "Hijo/a", "Otros vínculos familiares", "Padre/Madre") ~ "Familiar",
+                relacion_victima_inculpado %in% c("Cliente / proveedor", "Empleado", "Empleador", "Socio (Relación comercial)") ~ "Laboral", 
+                relacion_victima_inculpado %in% c("Conyuge/ pareja", "Ex conyuge / ex pareja") ~ "De pareja",
+                relacion_victima_inculpado %in% c("Sin relación") ~ "Sin relación",
+                relacion_victima_inculpado %in% c("Otras relaciones no familiares") ~ "Otros",
+                relacion_victima_inculpado == "Sin determinación" ~ "Sin datos",
+                relacion_victima_inculpado == "No corresponde" ~ "No corresponde"
+        )
+)
+
+table(df$relacion_agrup)
+
+```
+
