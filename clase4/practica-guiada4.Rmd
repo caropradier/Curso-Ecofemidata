@@ -1,0 +1,145 @@
+---
+title: "Clase 4"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+author: "Carolina Pradier y Laia Domenech Burin"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
+```
+
+
+```{r librerias}
+library(tidyverse)
+library(eph)
+options(dplyr.summarise.inform = FALSE)
+```
+
+# Introducción
+
+La clase pasada comenzamos a trabajar con algunas funciones del paquete **tidyverse**. 
+
+En la clase de hoy vamos a avanzar sobre nuevas funciones para explorar la información en una base de datos. En particular, vamos a estar trabajando sobre la **Encuesta Permanente de Hogares** correspondiente al primer trimestre de 2019.
+
+En particular, vamos a estudiar cómo usar funciones para crear medidas resumen, unir dataframes y “pivotearlos”.
+
+Por último, vamos a introducir el paquete **lubridate** para trabajar con formatos de fecha.
+
+
+## Base de datos
+
+```{r levanto_base} 
+ base <- eph::get_microdata(year = 2019, #definimos el año
+                            trimester = 1, #definimos el trimestre
+                            type = "individual", #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
+                            destfile = "clase4/eph_2019_T1.rds") #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+```
+
+# Medidas de resumen
+
+Para obtener información a partir del procesamiento de una base de datos, generalmente vamos a utilizar conjuntamente las funciones **group_by()** y **summarise()**:
+
+* *group_by()* cambia la unidad de análsis del dataset a grupos de filas definidos de acuerdo con las categorías de alguna variable (por ejemplo, si agrupamos según la variable sexo, se separará a la base de datos en dos conjuntos de filas: aquellos identificados con sexo == mujer y aquellos identificados como sexo == varón). 
+De este modo, las operaciones que apliquemos sobre la base agrupada se aplicarán separadamente sobre cada uno de estos grupos. 
+
+* *summarise()* crea una tabla nueva donde se resume información acerca del dataframe original. 
+La cantidad de filas de la nueva tabla será igual a la cantidad de grupos que hayamos definido (en caso de no agrupar, vamos a tener un único grupo, que es el conjunto de todas las filas).
+La cantidad de columnas de la tabla será igual a la suma de la cantidad de variables por las que agrupamos y la cantidad de medidas de resumen que queramos calcular (por ejemplo, podríamos querer conocer la cantidad de observaciones en cada grupo, el ingreso máximo de los miembros de cada grupo, y su ingreso medio -en este caso, tendríamos 3 columnas-).
+
+```{r}
+
+
+```
+
+
+Si en el argumento de group_by() incluyéramos más de una variable, la cantidad de filas que obtendremos tras generar alguna medida de resumen sería igual a las combinaciones de valores entre las variables elegidas presentes en la tabla.
+
+```{r}
+
+```
+
+
+Finalmente, para seguir trabajando con el objeto que está agrupado sin esos grupos, hay que usar la función **ungroup()**.
+
+```{r}
+
+```
+
+
+# Unión de bases
+
+Para unir bases de datos a partir de un identificador común vamos a recurrir a distintas funciones join():
+
++ inner_join(): el resultado incluye todas las filas que estén presentes tanto en x como en y.
++ left_join(): el resultado incluye todas las filas que estén presentes en x (agregando las columnas de y con información sobre estas filas).
++ right_join(): el resultado incluye todas las filas que estén presentes en y (agregando las columnas de x con información sobre estas filas).
++ full_join(): el resultado incluye todas las filas que estén en x o y.
++ anti_join: el resultado incluye todas las filas de x que no estén presentes en y (sólo muestra las columnas de x).
+
+![Fuente: http://rstudio-pubs-static.s3.amazonaws.com/227171_618ebdce0b9d44f3af65700e833593db.html](./imgs/joins.png)
+
+
+
+Para utilizar estas funciones, vamos a tener que explicitar:
+
++ qué dataframes queremos unir.
++ cuál (o cuáles) es (son) la(s) columna(s) con la información correspondiente al identificador.
+
+```{r}
+
+```
+
+
+ojo con la duplicación!
+
+```{r}
+
+```
+
+
+# Pivots
+
+En algunos casos, vamos a necesitar transformar la presentación de la información en un dataframe (ya sea para presentar nuestros resultados, o para algún procesamiento posterior -por ejemplo, generar una visualización-). A estos fines, vamos a necesitar las funciones **pivot_longer()** y **pivot_wider()**.
+
+*pivot_longer()* “ensancha” los datos convirtiendo columnas a filas. Tiene los siguientes parámetros: 
++ cols: elijo las columnas que quiero pasar a filas 
++ names_to: indico el nombre de la columna que va a contener las variables elegidas 
++ values_to: indico el nombre de la columna que va a contener los valores de las variables
+
+```{r}
+
+```
+
+
+*pivot_wider()* es la operación inversa. 
+Crea variables a partir de filas, y “alarga” la base de datos. Tiene los siguientes parámetros: 
++ id_cols: la columna de ID, que no queremos que pierda su formato 
++ names_from: indico en qué columna están los nombres de las variables
++ values_from: indico en qué columna están los valores de las variables
+
+```{r}
+
+```
+
+
+# Trabajo con fechas: el paquete lubridate
+
+```{r}
+
+```
+
+
+# Exportar resultados
+
+xlsx
+
+```{r}
+
+```
+
+# Algunos ejercicios para empezar a practicar
