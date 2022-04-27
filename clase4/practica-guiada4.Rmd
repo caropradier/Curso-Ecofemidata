@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
 ```{r librerias}
 library(tidyverse)
 library(eph)
+library(openxlsx)
 options(dplyr.summarise.inform = FALSE)
 ```
 
@@ -46,8 +47,10 @@ Las variables de la Encuesta Permanente de Hogares están codificadas, voy a ree
                             ESTADO == 2 ~ "Desocupado",
                             ESTADO == 3 ~ "Inactivo",
                             ESTADO == 4 ~ "Menor de 10 años"),
+         
          SEXO = case_when(SEXO == 1 ~ "Hombre",
                           SEXO == 2 ~ "Mujer"),
+         
          CAT_OCUP = case_when(CAT_OCUP == 1 ~ "Patrón",
                             CAT_OCUP == 2 ~ "Cuenta propia",
                             CAT_OCUP == 3 ~ "Empleado",
@@ -199,18 +202,23 @@ Vamos a trabajar con la unión de tablas intentando responder la siguiente pregu
                             type = "individual", 
                             destfile = "clase4/eph_2019_T1.rds") %>%  
   select(CODUSU, NRO_HOGAR,"SEXO" = CH04, ESTADO, CAT_INAC, CAT_OCUP, "DESC_JUBILATORIO" = PP07H, PONDERA) %>% 
+  
   mutate(SEXO = case_when(SEXO == 1 ~ "Hombre",
                           SEXO == 2 ~ "Mujer"),
+         
          ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
                             ESTADO == 2 ~ "Desocupado",
                             ESTADO == 3 ~ "Inactivo",
                             ESTADO == 4 ~ "Menor de 10 años"),
+         
          CAT_INAC = case_when(CAT_INAC == 4 ~ "Ama de casa",
                               TRUE ~ "Otro"),
+         
          CAT_OCUP = case_when(CAT_OCUP == 1 ~ "Patrón",
                             CAT_OCUP == 2 ~ "Cuenta propia",
                             CAT_OCUP == 3 ~ "Empleado",
                             CAT_OCUP == 4 ~ "TFSR"),
+         
          DESC_JUBILATORIO = case_when(DESC_JUBILATORIO == 1 ~ "Tiene descuento jubilatorio",
                           DESC_JUBILATORIO == 2 ~ "No tiene descuento jubilatorio"))
 
@@ -251,7 +259,9 @@ Ambas filas de la tabla se encontraban presentes en la tabla 1 y la tabla 2, por
 
 ## left_join() y right_join()
 
-Pasemos a pensar en otras dimensiones de la inserción laboral de las personas de cada sexo, ¿qué proporción de las y los ocupados puede identificarse en cada categoría ocupacional? Entre quienes se encuentran en relación de dependencia, ¿la proporción de personas con descuento jubilatorio es la misma?  
+Pasemos a pensar en otras dimensiones de la inserción laboral de las personas de cada sexo, ¿qué proporción de las y los ocupados puede identificarse en cada categoría ocupacional? (tabla 1)
+
+Entre quienes se encuentran en relación de dependencia, ¿la proporción de personas con descuento jubilatorio es la misma? (tabla 2)
 
 
 ```{r}
@@ -320,21 +330,156 @@ Y luego aplicábamos la misma unión:
 ```{r}
 left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP"))
 ```
-¿Qué pasó? Ahora el dato de proporción de Hombres/Mujeres empleados aparece duplicado. ¿Por qué? Porque a cada combinación de las variables identificadoras (SEXO y CAT_OCUP) les correspondía más de una fila en la tabla 2.
+¿Qué pasó? Ahora el dato de proporción de Hombres/Mujeres empleados aparece duplicado. 
 
-# Trabajo con fechas: el paquete lubridate
+¿Por qué? 
+
+Porque a cada combinación de las variables identificadoras (SEXO y CAT_OCUP) les correspondía más de una fila en la tabla 2.
+
+# Trabajo con fechas
+
+Tenemos tres tipos de variables de tiempo principales en R:
+
++ **Date**: (Sólo Año, Mes y Día).
+
++ **Time**: (Un horario, sin especificar de que día es).
+
++ **Date-time**: (Año, Mes, Día y horario).
+
+## lubridate
+
+Es un paquete que está hecho para hacer más fácil el trabajo con fechas y horarios. Algunas de sus funcionalidades principales son:
+
++ Construir variables de tipo fecha a partir de números o caracteres.
+
++ Extraer información de variables ya constituídas como fechas.
+
++ Realizar operatorias con fechas (ej: calculo de distancias temporales entre dos registros).
+
+```{r}
+library(lubridate)
+```
+
+
+Para ver todo lo que ofrece, consultar: https://rawgit.com/rstudio/cheatsheets/master/lubridate.pdf
+
+### Construcción de variables tipo fecha
+
+```{r}
+fecha_1 <- "30 de abril 2021"
+
+class(fecha_1)
+```
+Mediante la combinacion de los caracteres dmy_hms que representan a día(d), mes(m), año(y), hora(h), minuto(m) y segundo(s) podemos convertir un número (o un string) hacia una fecha.
+
+```{r}
+fecha_1_formato <- dmy(fecha_1)
+
+fecha_1_formato
+
+class(fecha_1_formato)
+```
+También podría crear una fecha con horas, minutos y segundos:
+
+```{r}
+fecha_2 <- "2020/08/04 13:40:43"
+
+fecha_2 <- ymd_hms(fecha_2)
+
+fecha_2
+```
+
+Y para formatos menos estandarizados, se puede usar la función parse_date_time():
+
+```{r}
+fecha_3 <- c("Oct 1980 4", "May 1980 20", "Feb 1980 15")
+
+fecha_3 <-parse_date_time(fecha_3, orders = "myd")
+
+fecha_3
+
+```
+
+### Operaciones con fechas
+
+Podemos calcular la cantidad de tiempo que pasó entre dos fechas:
+
+```{r}
+fecha_3[1] - fecha_3[2] 
+```
+¿Cuántos segundos hay en 5 semanas?
+
+```{r}
+p_5_semanas <- period(5, units = "weeks")
+
+period_to_seconds(p_5_semanas)
+
+```
+En 5 semanas, ¿qué día es?
+
+```{r}
+now() + p_5_semanas
+```
+
+
+Podemos agregarle días, meses, o años a una fecha:
 
 ```{r}
 
+fecha_2
+
+fecha_2 + days(4)
+
+fecha_2 + years(10)
+
 ```
+
+### Extraer información de fechas
+
+A veces, queremos extraer algún elemento de la fecha para procesar a información.
+
+
+```{r}
+
+#Número
+month(fecha_2)
+
+#O nombre
+month(fecha_2, label = T)
+```
+
+```{r}
+wday(fecha_2, label = T)
+```
+
+
+
+```{r}
+#pensar alguna base
+
+#usar la función de janitor para limpiar fechas de un excel
+
+```
+
 
 
 # Exportar resultados
 
-xlsx
+Los objetos que creamos en el entorno de R existen en es entorno de R y al cerrar la sesión, desaparecen. Sin embargo, podemos querer guardar algún resultado. A estos fines, podemos recurrir a las herramientas para exportar a excel nuestros resultados.
+
+El comando más simple para hacer esto es write.xlsx()
 
 ```{r}
-
+write.xlsx(tabla_1, file = "clase4/prueba1.xlsx")
 ```
+
+Para guardar varios elementos en un mismo excel en distintas pestañas, recurrimos a una lista, donde indicamos para cada elemento que queramos guardar "Nombre de la pestaña" = Objeto de R.
+
+```{r}
+write.xlsx(list("resultado_cat_ocup"=tabla_1 ,
+                "resultado_desc_jub"=tabla_2), 
+           file = "clase4/prueba1.xlsx")
+```
+
 
 # Algunos ejercicios para empezar a practicar

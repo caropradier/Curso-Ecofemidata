@@ -1518,6 +1518,7 @@ div.tocify {
 
 <pre class="r"><code>library(tidyverse)
 library(eph)
+library(openxlsx)
 options(dplyr.summarise.inform = FALSE)</code></pre>
 <div id="introducción" class="section level1">
 <h1>Introducción</h1>
@@ -1538,8 +1539,10 @@ options(dplyr.summarise.inform = FALSE)</code></pre>
                             ESTADO == 2 ~ &quot;Desocupado&quot;,
                             ESTADO == 3 ~ &quot;Inactivo&quot;,
                             ESTADO == 4 ~ &quot;Menor de 10 años&quot;),
+         
          SEXO = case_when(SEXO == 1 ~ &quot;Hombre&quot;,
                           SEXO == 2 ~ &quot;Mujer&quot;),
+         
          CAT_OCUP = case_when(CAT_OCUP == 1 ~ &quot;Patrón&quot;,
                             CAT_OCUP == 2 ~ &quot;Cuenta propia&quot;,
                             CAT_OCUP == 3 ~ &quot;Empleado&quot;,
@@ -1704,16 +1707,30 @@ options(dplyr.summarise.inform = FALSE)</code></pre>
 <div id="inner_join" class="section level2">
 <h2>inner_join()</h2>
 <p>Vamos a trabajar con la unión de tablas intentando responder la siguiente pregunta: si considerásemos a las personas amas de casa como económicamente activas, ¿cómo se modifican las tasas de actividad de varones y mujeres?</p>
-<pre class="r"><code>base &lt;- eph::get_microdata(year = 2019, trimester = 1, type = &quot;individual&quot;, destfile = &quot;clase4/eph_2019_T1.rds&quot;) %&gt;%
-    select(CODUSU, NRO_HOGAR, SEXO = CH04, ESTADO, CAT_INAC, CAT_OCUP, DESC_JUBILATORIO = PP07H,
-        PONDERA) %&gt;%
-    mutate(SEXO = case_when(SEXO == 1 ~ &quot;Hombre&quot;, SEXO == 2 ~ &quot;Mujer&quot;), ESTADO = case_when(ESTADO ==
-        1 ~ &quot;Ocupado&quot;, ESTADO == 2 ~ &quot;Desocupado&quot;, ESTADO == 3 ~ &quot;Inactivo&quot;, ESTADO ==
-        4 ~ &quot;Menor de 10 años&quot;), CAT_INAC = case_when(CAT_INAC == 4 ~ &quot;Ama de casa&quot;,
-        TRUE ~ &quot;Otro&quot;), CAT_OCUP = case_when(CAT_OCUP == 1 ~ &quot;Patrón&quot;, CAT_OCUP ==
-        2 ~ &quot;Cuenta propia&quot;, CAT_OCUP == 3 ~ &quot;Empleado&quot;, CAT_OCUP == 4 ~ &quot;TFSR&quot;),
-        DESC_JUBILATORIO = case_when(DESC_JUBILATORIO == 1 ~ &quot;Tiene descuento jubilatorio&quot;,
-            DESC_JUBILATORIO == 2 ~ &quot;No tiene descuento jubilatorio&quot;))</code></pre>
+<pre class="r"><code> base &lt;- eph::get_microdata(year = 2019, 
+                            trimester = 1, 
+                            type = &quot;individual&quot;, 
+                            destfile = &quot;clase4/eph_2019_T1.rds&quot;) %&gt;%  
+  select(CODUSU, NRO_HOGAR,&quot;SEXO&quot; = CH04, ESTADO, CAT_INAC, CAT_OCUP, &quot;DESC_JUBILATORIO&quot; = PP07H, PONDERA) %&gt;% 
+  
+  mutate(SEXO = case_when(SEXO == 1 ~ &quot;Hombre&quot;,
+                          SEXO == 2 ~ &quot;Mujer&quot;),
+         
+         ESTADO = case_when(ESTADO == 1 ~ &quot;Ocupado&quot;,
+                            ESTADO == 2 ~ &quot;Desocupado&quot;,
+                            ESTADO == 3 ~ &quot;Inactivo&quot;,
+                            ESTADO == 4 ~ &quot;Menor de 10 años&quot;),
+         
+         CAT_INAC = case_when(CAT_INAC == 4 ~ &quot;Ama de casa&quot;,
+                              TRUE ~ &quot;Otro&quot;),
+         
+         CAT_OCUP = case_when(CAT_OCUP == 1 ~ &quot;Patrón&quot;,
+                            CAT_OCUP == 2 ~ &quot;Cuenta propia&quot;,
+                            CAT_OCUP == 3 ~ &quot;Empleado&quot;,
+                            CAT_OCUP == 4 ~ &quot;TFSR&quot;),
+         
+         DESC_JUBILATORIO = case_when(DESC_JUBILATORIO == 1 ~ &quot;Tiene descuento jubilatorio&quot;,
+                          DESC_JUBILATORIO == 2 ~ &quot;No tiene descuento jubilatorio&quot;))</code></pre>
 <p>Para responder esta pregunta, primero vamos a calcular normalmente la tasa de actividad en nuestra tabla 1:</p>
 <pre class="r"><code>tabla_1 &lt;- base %&gt;%
     group_by(SEXO) %&gt;%
@@ -1742,7 +1759,8 @@ options(dplyr.summarise.inform = FALSE)</code></pre>
 </div>
 <div id="left_join-y-right_join" class="section level2">
 <h2>left_join() y right_join()</h2>
-<p>Pasemos a pensar en otras dimensiones de la inserción laboral de las personas de cada sexo, ¿qué proporción de las y los ocupados puede identificarse en cada categoría ocupacional? Entre quienes se encuentran en relación de dependencia, ¿la proporción de personas con descuento jubilatorio es la misma?</p>
+<p>Pasemos a pensar en otras dimensiones de la inserción laboral de las personas de cada sexo, ¿qué proporción de las y los ocupados puede identificarse en cada categoría ocupacional? (tabla 1)</p>
+<p>Entre quienes se encuentran en relación de dependencia, ¿la proporción de personas con descuento jubilatorio es la misma? (tabla 2)</p>
 <pre class="r"><code>tabla_1 &lt;- base %&gt;%
     filter(ESTADO == &quot;Ocupado&quot;) %&gt;%
     group_by(SEXO, CAT_OCUP) %&gt;%
@@ -1822,15 +1840,104 @@ tabla_2 &lt;- base %&gt;%
 ##  8 Mujer  Empleado                  77.5 Tiene descuento jub~               61.9
 ##  9 Mujer  Patrón                     2.3 &lt;NA&gt;                               NA  
 ## 10 Mujer  TFSR                       0.9 &lt;NA&gt;                               NA</code></pre>
-<p>¿Qué pasó? Ahora el dato de proporción de Hombres/Mujeres empleados aparece duplicado. ¿Por qué? Porque a cada combinación de las variables identificadoras (SEXO y CAT_OCUP) les correspondía más de una fila en la tabla 2.</p>
+<p>¿Qué pasó? Ahora el dato de proporción de Hombres/Mujeres empleados aparece duplicado.</p>
+<p>¿Por qué?</p>
+<p>Porque a cada combinación de las variables identificadoras (SEXO y CAT_OCUP) les correspondía más de una fila en la tabla 2.</p>
 </div>
 </div>
-<div id="trabajo-con-fechas-el-paquete-lubridate" class="section level1">
-<h1>Trabajo con fechas: el paquete lubridate</h1>
+<div id="trabajo-con-fechas" class="section level1">
+<h1>Trabajo con fechas</h1>
+<p>Tenemos tres tipos de variables de tiempo principales en R:</p>
+<ul>
+<li><p><strong>Date</strong>: (Sólo Año, Mes y Día).</p></li>
+<li><p><strong>Time</strong>: (Un horario, sin especificar de que día es).</p></li>
+<li><p><strong>Date-time</strong>: (Año, Mes, Día y horario).</p></li>
+</ul>
+<div id="lubridate" class="section level2">
+<h2>lubridate</h2>
+<p>Es un paquete que está hecho para hacer más fácil el trabajo con fechas y horarios. Algunas de sus funcionalidades principales son:</p>
+<ul>
+<li><p>Construir variables de tipo fecha a partir de números o caracteres.</p></li>
+<li><p>Extraer información de variables ya constituídas como fechas.</p></li>
+<li><p>Realizar operatorias con fechas (ej: calculo de distancias temporales entre dos registros).</p></li>
+</ul>
+<pre class="r"><code>library(lubridate)</code></pre>
+<p>Para ver todo lo que ofrece, consultar: <a href="https://rawgit.com/rstudio/cheatsheets/master/lubridate.pdf" class="uri">https://rawgit.com/rstudio/cheatsheets/master/lubridate.pdf</a></p>
+<div id="construcción-de-variables-tipo-fecha" class="section level3">
+<h3>Construcción de variables tipo fecha</h3>
+<pre class="r"><code>fecha_1 &lt;- &quot;30 de abril 2021&quot;
+
+class(fecha_1)</code></pre>
+<pre><code>## [1] &quot;character&quot;</code></pre>
+<p>Mediante la combinacion de los caracteres dmy_hms que representan a día(d), mes(m), año(y), hora(h), minuto(m) y segundo(s) podemos convertir un número (o un string) hacia una fecha.</p>
+<pre class="r"><code>fecha_1_formato &lt;- dmy(fecha_1)
+
+fecha_1_formato</code></pre>
+<pre><code>## [1] &quot;2021-04-30&quot;</code></pre>
+<pre class="r"><code>class(fecha_1_formato)</code></pre>
+<pre><code>## [1] &quot;Date&quot;</code></pre>
+<p>También podría crear una fecha con horas, minutos y segundos:</p>
+<pre class="r"><code>fecha_2 &lt;- &quot;2020/08/04 13:40:43&quot;
+
+fecha_2 &lt;- ymd_hms(fecha_2)
+
+fecha_2</code></pre>
+<pre><code>## [1] &quot;2020-08-04 13:40:43 UTC&quot;</code></pre>
+<p>Y para formatos menos estandarizados, se puede usar la función parse_date_time():</p>
+<pre class="r"><code>fecha_3 &lt;- c(&quot;Oct 1980 4&quot;, &quot;May 1980 20&quot;, &quot;Feb 1980 15&quot;)
+
+fecha_3 &lt;- parse_date_time(fecha_3, orders = &quot;myd&quot;)
+
+fecha_3</code></pre>
+<pre><code>## [1] &quot;1980-10-04 UTC&quot; &quot;1980-05-20 UTC&quot; &quot;1980-02-15 UTC&quot;</code></pre>
+</div>
+<div id="operaciones-con-fechas" class="section level3">
+<h3>Operaciones con fechas</h3>
+<p>Podemos calcular la cantidad de tiempo que pasó entre dos fechas:</p>
+<pre class="r"><code>fecha_3[1] - fecha_3[2]</code></pre>
+<pre><code>## Time difference of 137 days</code></pre>
+<p>¿Cuántos segundos hay en 5 semanas?</p>
+<pre class="r"><code>p_5_semanas &lt;- period(5, units = &quot;weeks&quot;)
+
+period_to_seconds(p_5_semanas)</code></pre>
+<pre><code>## [1] 3024000</code></pre>
+<p>En 5 semanas, ¿qué día es?</p>
+<pre class="r"><code>now() + p_5_semanas</code></pre>
+<pre><code>## [1] &quot;2022-06-01 12:58:47 -03&quot;</code></pre>
+<p>Podemos agregarle días, meses, o años a una fecha:</p>
+<pre class="r"><code>fecha_2</code></pre>
+<pre><code>## [1] &quot;2020-08-04 13:40:43 UTC&quot;</code></pre>
+<pre class="r"><code>fecha_2 + days(4)</code></pre>
+<pre><code>## [1] &quot;2020-08-08 13:40:43 UTC&quot;</code></pre>
+<pre class="r"><code>fecha_2 + years(10)</code></pre>
+<pre><code>## [1] &quot;2030-08-04 13:40:43 UTC&quot;</code></pre>
+</div>
+<div id="extraer-información-de-fechas" class="section level3">
+<h3>Extraer información de fechas</h3>
+<p>A veces, queremos extraer algún elemento de la fecha para procesar a información.</p>
+<pre class="r"><code># Número
+month(fecha_2)</code></pre>
+<pre><code>## [1] 8</code></pre>
+<pre class="r"><code># O nombre
+month(fecha_2, label = T)</code></pre>
+<pre><code>## [1] ago
+## 12 Levels: ene &lt; feb &lt; mar &lt; abr &lt; may &lt; jun &lt; jul &lt; ago &lt; sep &lt; ... &lt; dic</code></pre>
+<pre class="r"><code>wday(fecha_2, label = T)</code></pre>
+<pre><code>## [1] mar\\.
+## Levels: dom\\. &lt; lun\\. &lt; mar\\. &lt; mié\\. &lt; jue\\. &lt; vie\\. &lt; sáb\\.</code></pre>
+<pre class="r"><code># pensar alguna base
+
+# usar la función de janitor para limpiar fechas de un excel</code></pre>
+</div>
+</div>
 </div>
 <div id="exportar-resultados" class="section level1">
 <h1>Exportar resultados</h1>
-<p>xlsx</p>
+<p>Los objetos que creamos en el entorno de R existen en es entorno de R y al cerrar la sesión, desaparecen. Sin embargo, podemos querer guardar algún resultado. A estos fines, podemos recurrir a las herramientas para exportar a excel nuestros resultados.</p>
+<p>El comando más simple para hacer esto es write.xlsx()</p>
+<pre class="r"><code>write.xlsx(tabla_1, file = &quot;clase4/prueba1.xlsx&quot;)</code></pre>
+<p>Para guardar varios elementos en un mismo excel en distintas pestañas, recurrimos a una lista, donde indicamos para cada elemento que queramos guardar “Nombre de la pestaña” = Objeto de R.</p>
+<pre class="r"><code>write.xlsx(list(resultado_cat_ocup = tabla_1, resultado_desc_jub = tabla_2), file = &quot;clase4/prueba1.xlsx&quot;)</code></pre>
 </div>
 <div id="algunos-ejercicios-para-empezar-a-practicar" class="section level1">
 <h1>Algunos ejercicios para empezar a practicar</h1>
