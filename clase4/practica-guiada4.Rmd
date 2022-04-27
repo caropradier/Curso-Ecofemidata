@@ -33,11 +33,25 @@ Por último, vamos a introducir el paquete **lubridate** para trabajar con forma
 
 ## Base de datos
 
+Las variables de la Encuesta Permanente de Hogares están codificadas, voy a reemplazar los códigos por su significado mirando el diseño de registro de la base.
+
 ```{r levanto_base} 
  base <- eph::get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
                             type = "individual", #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                            destfile = "clase4/eph_2019_T1.rds") #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+                            destfile = "clase4/eph_2019_T1.rds") %>%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+  select(ESTADO,CAT_OCUP,"SEXO" = CH04, PONDERA) %>% 
+  
+  mutate(ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
+                            ESTADO == 2 ~ "Desocupado",
+                            ESTADO == 3 ~ "Inactivo",
+                            ESTADO == 4 ~ "Menor de 10 años"),
+         SEXO = case_when(SEXO == 1 ~ "Hombre",
+                          SEXO == 2 ~ "Mujer"),
+         CAT_OCUP = case_when(CAT_OCUP == 1 ~ "Patrón",
+                            CAT_OCUP == 2 ~ "Cuenta propia",
+                            CAT_OCUP == 3 ~ "Empleado",
+                            CAT_OCUP == 4 ~ "TFSR"))
 ```
 
 # Medidas de resumen
@@ -51,24 +65,108 @@ De este modo, las operaciones que apliquemos sobre la base agrupada se aplicará
 La cantidad de filas de la nueva tabla será igual a la cantidad de grupos que hayamos definido (en caso de no agrupar, vamos a tener un único grupo, que es el conjunto de todas las filas).
 La cantidad de columnas de la tabla será igual a la suma de la cantidad de variables por las que agrupamos y la cantidad de medidas de resumen que queramos calcular (por ejemplo, podríamos querer conocer la cantidad de observaciones en cada grupo, el ingreso máximo de los miembros de cada grupo, y su ingreso medio -en este caso, tendríamos 3 columnas-).
 
+## ¿summarise() o mutate()?
+
+Veamos un caso:
+
 ```{r}
 
+unique(base$SEXO)
+
+base %>% 
+  group_by(SEXO) %>% 
+  summarise(Desocupados = sum(PONDERA[ESTADO == "Desocupado"], na.rm = TRUE),
+            PEA = sum(PONDERA[ESTADO == "Desocupado"| ESTADO == "Ocupado"], na.rm = TRUE),
+            "Tasa de desocupación" = round((Desocupados/PEA)*100,1)) 
+
+```
+En este caso, para estudiar la cantidad de casos correspondientes a cada combinación, recurro a la variable PONDERA, debido a que la base que estoy utilizando es una encuesta, cuyos ponderadores permiten representar a la población total.
+
+La tabla que obtenemos tiene 2 filas (las categorías de sexo) y cuatro columnas: una en la que aparece la variable que agrupa y tres donde aparecen las medidas de resumen que nos interesaba calcular. Lo que puede observarse en la tabla es que la tasa de desocupación es mayor para las mujeres.
+
+¿Qué pasa si en lugar de *summarise()* utilizábamos *mutate()*?
+
+```{r}
+
+base %>% 
+  group_by(SEXO) %>% 
+  mutate(Desocupados = sum(PONDERA[ESTADO == "Desocupado"], na.rm = TRUE),
+            PEA = sum(PONDERA[ESTADO == "Desocupado"| ESTADO == "Ocupado"], na.rm = TRUE),
+            "Tasa de desocupación" = round((Desocupados/PEA)*100,1)) 
 
 ```
 
+Obtenemos una tabla igual a la original, pero esta vez en cada fila correspondiente a las mujeres aparece la medida de resumen que le corresponde a ese grupo, y lo mismo para las filas correspondientes a varones.
+
+## Múltiples argumentos en group_by()
 
 Si en el argumento de group_by() incluyéramos más de una variable, la cantidad de filas que obtendremos tras generar alguna medida de resumen sería igual a las combinaciones de valores entre las variables elegidas presentes en la tabla.
 
 ```{r}
-
+base %>%
+  filter(ESTADO=="Ocupado") %>% #Me quedo con la población ocupada
+  group_by(SEXO, CAT_OCUP) %>% 
+  summarise(casos = sum(PONDERA))
 ```
 
+## ungroup()
 
 Finalmente, para seguir trabajando con el objeto que está agrupado sin esos grupos, hay que usar la función **ungroup()**.
 
 ```{r}
-
+base %>%
+  filter(ESTADO=="Ocupado") %>% #Me quedo con la población ocupada
+  group_by(SEXO, CAT_OCUP) %>% 
+  summarise(Casos = sum(PONDERA)) %>% 
+  ungroup() %>% 
+  group_by(SEXO) %>% 
+  mutate(Total = sum(Casos),
+         "Frecuencia relativa" = round((Casos/Total)*100,1))
 ```
+
+
+# Pivots
+
+En algunos casos, vamos a necesitar transformar la presentación de la información en un dataframe (ya sea para presentar nuestros resultados, o para algún procesamiento posterior -por ejemplo, generar una visualización-). A estos fines, vamos a necesitar las funciones **pivot_wider()** y **pivot_longer()**.
+
+## pivot_wider()
+
+*pivot_wider()* crea variables a partir de filas, y “ensancha” la base de datos. Tiene los siguientes parámetros: 
++ id_cols: la columna de ID, que no queremos que pierda su formato 
++ names_from: indico en qué columna están los nombres de las variables
++ values_from: indico en qué columna están los valores de las variables
+
+Veamos un ejemplo:
+
+```{r}
+base %>% 
+  filter(!is.na(ESTADO)) %>% 
+  group_by(SEXO, ESTADO) %>% 
+  summarise(Casos = sum(PONDERA)) %>% 
+  pivot_wider(.,id_cols=SEXO,names_from=ESTADO,values_from = Casos)
+```
+
+
+## pivot_longer()
+
+*pivot_longer()* es la operación inversa. 
+“Alarga” los datos convirtiendo columnas a filas. Tiene los siguientes parámetros: 
++ cols: elijo las columnas que quiero pasar a filas 
++ names_to: indico el nombre de la columna que va a contener las variables elegidas 
++ values_to: indico el nombre de la columna que va a contener los valores de las variables
+
+Revertimos la operación del ejemplo anterior:
+
+```{r}
+base %>% 
+  filter(!is.na(ESTADO)) %>%
+  group_by(SEXO, ESTADO) %>% 
+  summarise(Casos = sum(PONDERA)) %>% 
+  pivot_wider(.,id_cols=SEXO,names_from=ESTADO,values_from = Casos) %>% 
+  pivot_longer(.,cols = c("Desocupado", "Inactivo","Menor de 10 años", "Ocupado"), names_to = "ESTADO", values_to = "Casos")
+```
+
+
 
 
 # Unión de bases
@@ -79,7 +177,7 @@ Para unir bases de datos a partir de un identificador común vamos a recurrir a 
 + left_join(): el resultado incluye todas las filas que estén presentes en x (agregando las columnas de y con información sobre estas filas).
 + right_join(): el resultado incluye todas las filas que estén presentes en y (agregando las columnas de x con información sobre estas filas).
 + full_join(): el resultado incluye todas las filas que estén en x o y.
-+ anti_join: el resultado incluye todas las filas de x que no estén presentes en y (sólo muestra las columnas de x).
++ anti_join(): el resultado incluye todas las filas de x que no estén presentes en y (sólo muestra las columnas de x).
 
 ![Fuente: http://rstudio-pubs-static.s3.amazonaws.com/227171_618ebdce0b9d44f3af65700e833593db.html](./imgs/joins.png)
 
@@ -90,42 +188,139 @@ Para utilizar estas funciones, vamos a tener que explicitar:
 + qué dataframes queremos unir.
 + cuál (o cuáles) es (son) la(s) columna(s) con la información correspondiente al identificador.
 
+
+## inner_join()
+
+Vamos a trabajar con la unión de tablas intentando responder la siguiente pregunta: si considerásemos a las personas amas de casa como económicamente activas, ¿cómo se modifican las tasas de actividad de varones y mujeres? 
+
 ```{r}
+ base <- eph::get_microdata(year = 2019, 
+                            trimester = 1, 
+                            type = "individual", 
+                            destfile = "clase4/eph_2019_T1.rds") %>%  
+  select(CODUSU, NRO_HOGAR,"SEXO" = CH04, ESTADO, CAT_INAC, CAT_OCUP, "DESC_JUBILATORIO" = PP07H, PONDERA) %>% 
+  mutate(SEXO = case_when(SEXO == 1 ~ "Hombre",
+                          SEXO == 2 ~ "Mujer"),
+         ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
+                            ESTADO == 2 ~ "Desocupado",
+                            ESTADO == 3 ~ "Inactivo",
+                            ESTADO == 4 ~ "Menor de 10 años"),
+         CAT_INAC = case_when(CAT_INAC == 4 ~ "Ama de casa",
+                              TRUE ~ "Otro"),
+         CAT_OCUP = case_when(CAT_OCUP == 1 ~ "Patrón",
+                            CAT_OCUP == 2 ~ "Cuenta propia",
+                            CAT_OCUP == 3 ~ "Empleado",
+                            CAT_OCUP == 4 ~ "TFSR"),
+         DESC_JUBILATORIO = case_when(DESC_JUBILATORIO == 1 ~ "Tiene descuento jubilatorio",
+                          DESC_JUBILATORIO == 2 ~ "No tiene descuento jubilatorio"))
 
 ```
 
-
-ojo con la duplicación!
+Para responder esta pregunta, primero vamos a calcular normalmente la tasa de actividad en nuestra tabla 1:
 
 ```{r}
+tabla_1 <- base %>% 
+  group_by(SEXO) %>% 
+  summarise(PEA = sum(PONDERA[ESTADO == "Desocupado"| ESTADO == "Ocupado"], na.rm = TRUE),
+            Poblacion = sum(PONDERA),
+            "Tasa de actividad" = round((PEA/Poblacion)*100,1)) %>% 
+  select(-PEA,-Poblacion) 
+```
 
+Luego, vamos a calcularla clasificando a las amas de casa como parte de la población económicamente activa en nuestra tabla 2:
+
+```{r}
+tabla_2 <- base %>% 
+  mutate(ESTADO_corregido = case_when(ESTADO == "Inactivo" & CAT_INAC == "Ama de casa" ~ "Ocupado",
+                                      TRUE ~ paste0(ESTADO))) %>% 
+  group_by(SEXO) %>% 
+  summarise(PEA = sum(PONDERA[ESTADO_corregido == "Desocupado"| ESTADO_corregido == "Ocupado"], na.rm = TRUE),
+            Poblacion = sum(PONDERA),
+            "Tasa de actividad corregida" = round((PEA/Poblacion)*100,1)) %>% 
+  select(-PEA,-Poblacion) 
+```
+
+Ahora, vamos a unir las tablas y calcular la diferencia:
+
+```{r}
+inner_join(tabla_1,tabla_2,by = "SEXO") %>% 
+  mutate(Diferencia = `Tasa de actividad corregida` - `Tasa de actividad`)
+```
+
+Ambas filas de la tabla se encontraban presentes en la tabla 1 y la tabla 2, por lo tanto, conservamos todas las filas de ambas tablas. Como resultado, tenemos que, dado que las mujeres tienden a dedicarse en mayor medida que los varones al trabajo doméstico no remunerado, el incremento en la tasa de actividad femenina al hacer esta corrección es de 10 puntos porcentuales más que en el caso de los hombres.
+
+## left_join() y right_join()
+
+Pasemos a pensar en otras dimensiones de la inserción laboral de las personas de cada sexo, ¿qué proporción de las y los ocupados puede identificarse en cada categoría ocupacional? Entre quienes se encuentran en relación de dependencia, ¿la proporción de personas con descuento jubilatorio es la misma?  
+
+
+```{r}
+tabla_1 <-  base %>% 
+  filter(ESTADO == "Ocupado") %>% 
+  group_by(SEXO, CAT_OCUP) %>% 
+  summarise(Casos = sum(PONDERA)) %>% 
+  ungroup() %>% 
+  group_by(SEXO) %>% 
+  mutate(Total = sum(Casos),
+         "Frecuencia relativa" = round((Casos/Total)*100,1)) %>% 
+  select(-Casos, -Total)
+
+tabla_2 <- base %>% 
+  filter(ESTADO == "Ocupado" & CAT_OCUP == "Empleado") %>% 
+  group_by(SEXO, CAT_OCUP, DESC_JUBILATORIO) %>% 
+  summarise(Casos = sum(PONDERA)) %>% 
+  ungroup() %>% 
+  group_by(SEXO, CAT_OCUP) %>% 
+  mutate(Total = sum(Casos),
+         "Frecuencia relativa" = round((Casos/Total)*100,1)) %>% 
+  select(-Casos, -Total) %>% 
+  pivot_wider(.,id_cols = c(SEXO, CAT_OCUP), names_from = DESC_JUBILATORIO, values_from = "Frecuencia relativa")
+  
 ```
 
 
-# Pivots
+Ahora que tenemos toda la información, podemos presentarla de dos formas:
 
-En algunos casos, vamos a necesitar transformar la presentación de la información en un dataframe (ya sea para presentar nuestros resultados, o para algún procesamiento posterior -por ejemplo, generar una visualización-). A estos fines, vamos a necesitar las funciones **pivot_longer()** y **pivot_wider()**.
-
-*pivot_longer()* “ensancha” los datos convirtiendo columnas a filas. Tiene los siguientes parámetros: 
-+ cols: elijo las columnas que quiero pasar a filas 
-+ names_to: indico el nombre de la columna que va a contener las variables elegidas 
-+ values_to: indico el nombre de la columna que va a contener los valores de las variables
++ O bien agregando la información respecto al descuento jubilatorio a la distribución por categoría ocupacional:
 
 ```{r}
-
+left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP"))
 ```
 
+De este modo, permitimos un análisis más detallado de la distribución al caracterizar de forma más precisa a quienes se emplean en relación de dependencia.
 
-*pivot_wider()* es la operación inversa. 
-Crea variables a partir de filas, y “alarga” la base de datos. Tiene los siguientes parámetros: 
-+ id_cols: la columna de ID, que no queremos que pierda su formato 
-+ names_from: indico en qué columna están los nombres de las variables
-+ values_from: indico en qué columna están los valores de las variables
++ O bien enfocando el análisis en la población en relación de dependencia, pero manteniendo el dato que da cuenta de la proporción de la población ocupada total que representan las personas que se insertan laboralmente de esta forma:
 
 ```{r}
-
+right_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP"))
 ```
 
+De este modo, nos enfocamos en los y las asalariadas, sin olvidar que hay otro 20-30% de la población que no estamos teniendo en cuenta.
+
+## Problemas de duplicación
+
+Para cerrar esta sección, señalamos un problema que puede surgir al unir bases.
+
+Imaginemos que en el cálculo de la tabla 2 generábamos la siguiente tabla (sin pivot!):
+
+```{r}
+tabla_2 <- base %>% 
+  filter(ESTADO == "Ocupado" & CAT_OCUP == "Empleado") %>% 
+  group_by(SEXO, CAT_OCUP, DESC_JUBILATORIO) %>% 
+  summarise(Casos = sum(PONDERA)) %>% 
+  ungroup() %>% 
+  group_by(SEXO, CAT_OCUP) %>% 
+  mutate(Total = sum(Casos),
+         "Frecuencia relativa" = round((Casos/Total)*100,1)) %>% 
+  select(-Casos, -Total) 
+```
+
+Y luego aplicábamos la misma unión:
+
+```{r}
+left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP"))
+```
+¿Qué pasó? Ahora el dato de proporción de Hombres/Mujeres empleados aparece duplicado. ¿Por qué? Porque a cada combinación de las variables identificadoras (SEXO y CAT_OCUP) les correspondía más de una fila en la tabla 2.
 
 # Trabajo con fechas: el paquete lubridate
 
