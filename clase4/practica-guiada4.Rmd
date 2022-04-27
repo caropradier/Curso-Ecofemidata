@@ -452,15 +452,24 @@ month(fecha_2, label = T)
 wday(fecha_2, label = T)
 ```
 
-
+Ejemplo: tomamos la base del Ministerio de Justicia y Derechos Humanos de la Línea 137 - víctimas de violencia familiar - llamados e intervenciones domiciliarias. Cada fila del registro es un caso.
 
 ```{r}
-#pensar alguna base
+library(readxl)
 
-#usar la función de janitor para limpiar fechas de un excel
+llamados_atendidos_violencia_familiar_202202 <- read_excel("clase4/llamados-atendidos-violencia-familiar-202202.xlsx") 
 
 ```
 
+¿En qué día de la semana se llama más?
+
+```{r}
+llamados_atendidos_violencia_familiar_202202 %>% 
+  mutate(dia = wday(llamado_fecha, label = T)) %>% 
+  group_by(dia) %>% 
+  summarise(Casos = n()) %>% 
+  arrange(-Casos)
+```
 
 
 # Exportar resultados

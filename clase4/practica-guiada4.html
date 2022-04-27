@@ -1903,7 +1903,7 @@ period_to_seconds(p_5_semanas)</code></pre>
 <pre><code>## [1] 3024000</code></pre>
 <p>En 5 semanas, ¿qué día es?</p>
 <pre class="r"><code>now() + p_5_semanas</code></pre>
-<pre><code>## [1] &quot;2022-06-01 12:58:47 -03&quot;</code></pre>
+<pre><code>## [1] &quot;2022-06-01 16:50:30 -03&quot;</code></pre>
 <p>Podemos agregarle días, meses, o años a una fecha:</p>
 <pre class="r"><code>fecha_2</code></pre>
 <pre><code>## [1] &quot;2020-08-04 13:40:43 UTC&quot;</code></pre>
@@ -1925,9 +1925,26 @@ month(fecha_2, label = T)</code></pre>
 <pre class="r"><code>wday(fecha_2, label = T)</code></pre>
 <pre><code>## [1] mar\\.
 ## Levels: dom\\. &lt; lun\\. &lt; mar\\. &lt; mié\\. &lt; jue\\. &lt; vie\\. &lt; sáb\\.</code></pre>
-<pre class="r"><code># pensar alguna base
+<p>Ejemplo: tomamos la base del Ministerio de Justicia y Derechos Humanos de la Línea 137 - víctimas de violencia familiar - llamados e intervenciones domiciliarias. Cada fila del registro es un caso.</p>
+<pre class="r"><code>library(readxl)
 
-# usar la función de janitor para limpiar fechas de un excel</code></pre>
+llamados_atendidos_violencia_familiar_202202 &lt;- read_excel(&quot;clase4/llamados-atendidos-violencia-familiar-202202.xlsx&quot;)</code></pre>
+<p>¿En qué día de la semana se llama más?</p>
+<pre class="r"><code>llamados_atendidos_violencia_familiar_202202 %&gt;%
+    mutate(dia = wday(llamado_fecha, label = T)) %&gt;%
+    group_by(dia) %&gt;%
+    summarise(Casos = n()) %&gt;%
+    arrange(-Casos)</code></pre>
+<pre><code>## # A tibble: 7 x 2
+##   dia      Casos
+##   &lt;ord&gt;    &lt;int&gt;
+## 1 &quot;lun\\.&quot;   270
+## 2 &quot;jue\\.&quot;   254
+## 3 &quot;mar\\.&quot;   230
+## 4 &quot;mié\\.&quot;   221
+## 5 &quot;vie\\.&quot;   189
+## 6 &quot;sáb\\.&quot;   165
+## 7 &quot;dom\\.&quot;   159</code></pre>
 </div>
 </div>
 </div>
