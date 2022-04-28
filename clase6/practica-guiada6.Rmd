@@ -1,0 +1,280 @@
+---
+title: "Clase 6 - Visualización de gráficos e iteraciones"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+author: "Carolina Pradier y Laia Domenech Burin"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
+```
+
+
+```{r librerias}
+library(tidyverse)
+library(eph)
+options(dplyr.summarise.inform = FALSE)
+```
+
+# Introducción
+
+# Visualización interactiva
+
+La visualización interactiva va a permitir que los usuarios de nuestras visualizaciones puedan explorar nuestros resultados con mayor libertad. Es decir, van a permitir que cada usuario pueda analizar con mayor detalle lo que más le interesa.
+
+Vamos a volver a trabajar con la base de EPH para encontrar la brecha salarial entre varones y mujeres para cada sector productivo, y luego vamos a graficarlo interactivamente.
+
+```{r}
+base <- eph::get_microdata(year = 2019, 
+                            trimester = 1,
+                            type = "individual", 
+                            destfile = "bases_fuentes/eph_2019_T1.rds")  %>% 
+  organize_caes()%>%  #recodifica la variable que indica el sector de la ocupación
+  select(ESTADO,"SEXO" = CH04, "Ing_Ocup_Principal"= P21, PONDIIO,caes_eph_label) %>% 
+  
+  mutate(ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
+                            ESTADO == 2 ~ "Desocupado",
+                            ESTADO == 3 ~ "Inactivo",
+                            ESTADO == 4 ~ "Menor de 10 años"),
+         SEXO = case_when(SEXO == 1 ~ "Varones",
+                          SEXO == 2 ~ "Mujeres")) %>% 
+  filter(Ing_Ocup_Principal != -9) %>%  #valor de no respuesta
+  filter(ESTADO == "Ocupado")
+
+
+
+```
+
+
+Calculamos el ingreso medio de los trabajadores de cada sexo y sector. También vamos a tener en cuenta en qué sectores las mujeres tienen una participación mayor.
+
+```{r}
+
+#Aclaración: el ponderador para la variable de ingreso de la ocupación proncipal es PONDIIO
+
+ingresos <- base %>% 
+  group_by(SEXO,caes_eph_label) %>% 
+  summarise(Ingreso_medio = weighted.mean(Ing_Ocup_Principal,PONDIIO, na.rm = T)) %>% 
+  pivot_wider(id_cols = caes_eph_label, names_from = SEXO, values_from = Ingreso_medio) %>% 
+  mutate(Brecha =  ((Varones-Mujeres)/Varones))
+
+participacion <-  base %>% 
+  group_by(SEXO,caes_eph_label) %>%
+  summarise(Casos = n()) %>% 
+  ungroup() %>% 
+  group_by(caes_eph_label) %>% 
+  mutate(Total = sum(Casos),
+         Prop = (Casos/Total)*100) %>% 
+  filter(SEXO == "Mujeres") %>% 
+  select(caes_eph_label, Prop)
+
+ingresos <- ingresos %>% 
+  left_join(.,participacion, by = "caes_eph_label")
+
+ingresos
+
+```
+
+
+
+## plotly
+
+```{r}
+library(plotly)
+```
+
+
+Ahora graficamos nuestros resultados:
+
+```{r}
+plot_ly(ingresos, x = ~Mujeres, y = ~Varones, color = ~Brecha, colors = 'Spectral',
+        type = 'scatter', 
+        mode = 'markers',  marker = list(size = ~Prop, opacity = 0.9),
+        
+        hoverinfo = 'text',
+        text = ~paste(caes_eph_label, '<br>Mujeres:', paste0("$",round(Mujeres,1)), '<br>Varones:', paste0("$",round(Varones,1)), '<br>Brecha:', paste0(round(Brecha*100,1), "%"), '<br>Proporción de trabajadoras mujeres:', paste0(round(Prop,1), "%"))
+        
+        ) %>% 
+       layout(title = 'Ingreso medio y bracha salarial por sector productivo',
+         xaxis = list(showgrid = FALSE),
+         yaxis = list(showgrid = FALSE))
+```
+
+
+
+### Bonus
+
+
+Más ideas: https://plotly.com/r/
+
+Para seguir avanzando: 
+
+* https://jkunst.com/highcharter/
+
+* http://rstudio.github.io/dygraphs/
+
+# Iteración y funciones
+
+La iteración y las funciones nos van a permitir reducir la duplicación en el código (copiar y pegar las mismas instrucciones). 
+
+¿Por qué reducir la duplicación?
+
+* Es más fácil entender tu código (para vos en otro momento, o para un tercero). 
+
+* Es más simple realizar cambios y encontrar errores. 
+
+
+## Iteraciones
+
+La iteración es una herramienta para repetir la misma tarea con múltiples inputs (variables, conjuntos de datos, etc.).
+
+Un loop es una estructura de código que nos permite aplicar iterativamente un mismo conjunto de comandos, variando el valor de una variable. Su estructura general es la siguiente:
+
+```{r}
+for (variable in vector) {
+  #Operaciones
+}
+```
+
+El nombre que definamos para la variable debe ser el mismo que utilicemos para realizar las operaciones dentro del loop, pero puede ser cualquiera (x,i,planta,supercalifragil, etc).
+
+Por ejemplo:
+
+```{r}
+for (x in 1:5) {
+  print(x*x)
+}
+
+```
+Lo que hizo el código fue crear una variable x, que fue tomando los valores 1, 2, 3, 4 y 5, y en cada caso multiplicándose por sí misma.
+
+En nuestro loop pueden intervenir también objetos que hayamos definido previamente. 
+
+Por ejemplo:
+
+```{r}
+
+b <- 10
+
+for (x in 1:5) {
+  print(x+b)
+}
+
+```
+Una herramienta que vamos a utilizar mucho es la función *seq()*, que permite generar una secuencia de números (que vamos a utilizar para iterar). Por default, si ingresamos un único número como argumento, genera una secuencia desde 1 hasta ese número.
+
+```{r}
+
+seq(3)
+
+for (i in (seq(3))) {
+  print(i)
+}
+
+
+```
+¿Cuándo podríamos usar esto? En operaciones de *subsetting* o *slicing*
+
+```{r}
+
+#defino el vector
+vec <- c("a","b","c")
+
+#¿cuántos elementos tiene?
+length(vec)
+
+#Convierto cada elemento al mismo elemento en mayúscula
+for (letra in (seq(length(vec)))) {
+  vec[letra] <- toupper(vec[letra])
+}
+
+#¿Cómo quedó?
+vec
+
+```
+¿Qué pasó? Nuestro loop fue avanzando sobre los elementos de vec, reemplazándolos por el mismo valor en mayúscula. Por ejemplo, al vec[1] = "a", lo transformó en "A".
+
+### Aplicación sobre una base de datos
+
+Veamos cómo puede ser útil para un procesamiento. 
+
+Si tenemos una base de datos con información sobre distintos tipos de población, podemos querer generar una medida resumen para cada segmento de la población.
+
+Por ejemplo:
+
+```{r}
+
+#base <- 
+
+```
+
+
+```{r}
+
+vector_valores <- unique(base$xx)
+
+#En esta base vamos a guardar nuestros resultados
+resultados <- list()
+
+for (valor in (seq(length(vector_valores)))) {
+  
+  tabla_resumen <- base %>% 
+    filter(xx == vector_valores[valor]) %>% 
+    summarise()
+  
+  resultados[[valor]] <-  tabla_resumen
+  
+}
+
+#Veamos una de las tablas que generamos:
+
+vector_valores[3]
+resultados[[3]]
+
+```
+
+
+## Funciones
+
+Retomamos lo introducido en la clase 2: la función es una forma de encapsular una serie de operaciones a las que vayamos a recurrir más de una vez, esta es su estructura general: 
+
+```{r}
+fun_ej <-function(argumentos){
+	#[se hace algún cómputo]
+}
+```
+
+En este caso, vamos a utilizar esta herramienta -en conjunto con la iteración- para generar una serie de gráficos.
+
+Primero, creamos nuestra función:
+
+```{r}
+
+crear_grafico = function(tabla){
+  
+  +ggsave(paste0("clase6/graficos/",xx,".png"))
+  
+}
+
+```
+
+Luego, la aplicamos de forma iterativa:
+
+```{r}
+
+for (i in seq(length(resultados))) {
+  
+  crear_grafico(resultados[[i]])
+  
+}
+
+```
+
+Los resultados de nuestro prcesamiento están guardados en la carpeta graficos de la clase 6.
+
+
+# Algunos ejercicios para empezar a practicar

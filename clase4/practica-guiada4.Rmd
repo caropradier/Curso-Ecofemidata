@@ -1,5 +1,5 @@
 ---
-title: "Clase 4"
+title: "Clase 4 - Tidyverse"
 output: 
   html_document:
     toc: TRUE
@@ -40,7 +40,7 @@ Las variables de la Encuesta Permanente de Hogares están codificadas, voy a ree
  base <- eph::get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
                             type = "individual", #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                            destfile = "clase4/eph_2019_T1.rds") %>%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+                            destfile = "bases_fuentes/eph_2019_T1.rds") %>%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
   select(ESTADO,CAT_OCUP,"SEXO" = CH04, PONDERA) %>% 
   
   mutate(ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
@@ -48,8 +48,8 @@ Las variables de la Encuesta Permanente de Hogares están codificadas, voy a ree
                             ESTADO == 3 ~ "Inactivo",
                             ESTADO == 4 ~ "Menor de 10 años"),
          
-         SEXO = case_when(SEXO == 1 ~ "Hombre",
-                          SEXO == 2 ~ "Mujer"),
+         SEXO = case_when(SEXO == 1 ~ "Varones",
+                          SEXO == 2 ~ "Mujeres"),
          
          CAT_OCUP = case_when(CAT_OCUP == 1 ~ "Patrón",
                             CAT_OCUP == 2 ~ "Cuenta propia",
@@ -61,7 +61,7 @@ Las variables de la Encuesta Permanente de Hogares están codificadas, voy a ree
 
 Para obtener información a partir del procesamiento de una base de datos, generalmente vamos a utilizar conjuntamente las funciones **group_by()** y **summarise()**:
 
-* *group_by()* cambia la unidad de análsis del dataset a grupos de filas definidos de acuerdo con las categorías de alguna variable (por ejemplo, si agrupamos según la variable sexo, se separará a la base de datos en dos conjuntos de filas: aquellos identificados con sexo == mujer y aquellos identificados como sexo == varón). 
+* *group_by()* cambia la unidad de análsis del dataset a grupos de filas definidos de acuerdo con las categorías de alguna variable (por ejemplo, si agrupamos según la variable sexo, se separará a la base de datos en dos conjuntos de filas: aquellos identificados con sexo == Mujeres y aquellos identificados como sexo == varón). 
 De este modo, las operaciones que apliquemos sobre la base agrupada se aplicarán separadamente sobre cada uno de estos grupos. 
 
 * *summarise()* crea una tabla nueva donde se resume información acerca del dataframe original. 
@@ -200,11 +200,11 @@ Vamos a trabajar con la unión de tablas intentando responder la siguiente pregu
  base <- eph::get_microdata(year = 2019, 
                             trimester = 1, 
                             type = "individual", 
-                            destfile = "clase4/eph_2019_T1.rds") %>%  
+                            destfile = "bases_fuentes/eph_2019_T1.rds") %>%  
   select(CODUSU, NRO_HOGAR,"SEXO" = CH04, ESTADO, CAT_INAC, CAT_OCUP, "DESC_JUBILATORIO" = PP07H, PONDERA) %>% 
   
-  mutate(SEXO = case_when(SEXO == 1 ~ "Hombre",
-                          SEXO == 2 ~ "Mujer"),
+  mutate(SEXO = case_when(SEXO == 1 ~ "Varones",
+                          SEXO == 2 ~ "Mujeres"),
          
          ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
                             ESTADO == 2 ~ "Desocupado",
@@ -255,7 +255,7 @@ inner_join(tabla_1,tabla_2,by = "SEXO") %>%
   mutate(Diferencia = `Tasa de actividad corregida` - `Tasa de actividad`)
 ```
 
-Ambas filas de la tabla se encontraban presentes en la tabla 1 y la tabla 2, por lo tanto, conservamos todas las filas de ambas tablas. Como resultado, tenemos que, dado que las mujeres tienden a dedicarse en mayor medida que los varones al trabajo doméstico no remunerado, el incremento en la tasa de actividad femenina al hacer esta corrección es de 10 puntos porcentuales más que en el caso de los hombres.
+Ambas filas de la tabla se encontraban presentes en la tabla 1 y la tabla 2, por lo tanto, conservamos todas las filas de ambas tablas. Como resultado, tenemos que, dado que las mujeres tienden a dedicarse en mayor medida que los varones al trabajo doméstico no remunerado, el incremento en la tasa de actividad femenina al hacer esta corrección es de 10 puntos porcentuales más que en el caso de los Varones.
 
 ## left_join() y right_join()
 
@@ -330,7 +330,7 @@ Y luego aplicábamos la misma unión:
 ```{r}
 left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP"))
 ```
-¿Qué pasó? Ahora el dato de proporción de Hombres/Mujeres empleados aparece duplicado. 
+¿Qué pasó? Ahora el dato de proporción de Varones/Mujeres empleados aparece duplicado. 
 
 ¿Por qué? 
 
