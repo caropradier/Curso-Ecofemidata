@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
 ```{r librerias}
 library(tidyverse)
 library(eph)
+library(spatstat)
 options(dplyr.summarise.inform = FALSE)
 ```
 
@@ -34,7 +35,7 @@ base <- eph::get_microdata(year = 2019,
                             type = "individual", 
                             destfile = "bases_fuentes/eph_2019_T1.rds")  %>% 
   organize_caes()%>%  #recodifica la variable que indica el sector de la ocupación
-  select(ESTADO,"SEXO" = CH04, "Ing_Ocup_Principal"= P21, PONDIIO,caes_eph_label) %>% 
+  select(ESTADO,"SEXO" = CH04, "Ing_Ocup_Principal"= P21, PONDIIO,caes_eph_label, "Horas" = PP3E_TOT) %>% 
   
   mutate(ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
                             ESTADO == 2 ~ "Desocupado",
@@ -50,13 +51,14 @@ base <- eph::get_microdata(year = 2019,
 ```
 
 
-Calculamos el ingreso medio de los trabajadores de cada sexo y sector. También vamos a tener en cuenta en qué sectores las mujeres tienen una participación mayor.
+Calculamos el ingreso medio de los trabajadores de cada sexo y sector, y luego la brecha. También vamos a tener en cuenta en qué sectores las mujeres tienen una participación mayor.
 
 ```{r}
 
 #Aclaración: el ponderador para la variable de ingreso de la ocupación proncipal es PONDIIO
 
 ingresos <- base %>% 
+  filter(Ing_Ocup_Principal > 0) %>%
   group_by(SEXO,caes_eph_label) %>% 
   summarise(Ingreso_medio = weighted.mean(Ing_Ocup_Principal,PONDIIO, na.rm = T)) %>% 
   pivot_wider(id_cols = caes_eph_label, names_from = SEXO, values_from = Ingreso_medio) %>% 
@@ -83,31 +85,34 @@ ingresos
 
 ## plotly
 
+Para graficar nuestros resultados, vamos a recurrir al paquete *plotly*. Este paquete nos ayuda a crear gráficos interactivos (y puede utilizarse en combinación con ggplot para transformar un gráfico no interactivo en un gráfico interactivo).
+
 ```{r}
 library(plotly)
 ```
 
 
-Ahora graficamos nuestros resultados:
+En nuestro gráfico, vamos a graficar el ingreso medio de cada sector productivo para trabajadores de cada sexo, coloreando cada burbuja de acuerdo con la magnitud de la brecha, y determinando el tamaño de la burbuja según la proporción de trabajadoras mujeres en el sector.
 
 ```{r}
-plot_ly(ingresos, x = ~Mujeres, y = ~Varones, color = ~Brecha, colors = 'Spectral',
-        type = 'scatter', 
-        mode = 'markers',  marker = list(size = ~Prop, opacity = 0.9),
+plot_ly(ingresos, x = ~Mujeres, y = ~Varones, 
+        color = ~Brecha, colors = 'Spectral',
+        type = 'scatter', mode = 'markers',  marker = list(size = ~Prop, opacity = 0.9),
         
         hoverinfo = 'text',
         text = ~paste(caes_eph_label, '<br>Mujeres:', paste0("$",round(Mujeres,1)), '<br>Varones:', paste0("$",round(Varones,1)), '<br>Brecha:', paste0(round(Brecha*100,1), "%"), '<br>Proporción de trabajadoras mujeres:', paste0(round(Prop,1), "%"))
         
         ) %>% 
-       layout(title = 'Ingreso medio y bracha salarial por sector productivo',
+       layout(title = 'Ingreso medio y brecha salarial por sector productivo',
          xaxis = list(showgrid = FALSE),
          yaxis = list(showgrid = FALSE))
 ```
+Prueben pasar el mouse por encima del gráfico, moverlo, hacer zoom, etc. 
 
+¿Qué análisis podemos hacer de la información representada? 
 
 
 ### Bonus
-
 
 Más ideas: https://plotly.com/r/
 
@@ -116,6 +121,7 @@ Para seguir avanzando:
 * https://jkunst.com/highcharter/
 
 * http://rstudio.github.io/dygraphs/
+
 
 # Iteración y funciones
 
@@ -127,6 +133,7 @@ La iteración y las funciones nos van a permitir reducir la duplicación en el c
 
 * Es más simple realizar cambios y encontrar errores. 
 
+Además, van a potenciar nuestro trabajo con R, permitiéndonos escalar la cantidad de procesamientos y visualizaciones que podemos obtener a partir del análisis de una base de datos en muy poco tiempo.
 
 ## Iteraciones
 
@@ -204,27 +211,27 @@ Veamos cómo puede ser útil para un procesamiento.
 
 Si tenemos una base de datos con información sobre distintos tipos de población, podemos querer generar una medida resumen para cada segmento de la población.
 
-Por ejemplo:
-
-```{r}
-
-#base <- 
-
-```
+Por ejemplo, supongamos que queremos llevar a cabo un análisis más detallado de la distribución de los ingresos por sexo para cada rama de actividad:
 
 
 ```{r}
 
-vector_valores <- unique(base$xx)
+vector_valores <- unique(base$caes_eph_label)
 
-#En esta base vamos a guardar nuestros resultados
+#En esta lista vamos a guardar nuestros resultados
 resultados <- list()
 
 for (valor in (seq(length(vector_valores)))) {
   
   tabla_resumen <- base %>% 
-    filter(xx == vector_valores[valor]) %>% 
-    summarise()
+    filter(caes_eph_label == vector_valores[valor]) %>% 
+    filter(Ing_Ocup_Principal > 0) %>% 
+    group_by(SEXO) %>% 
+    summarise(sector = unique(caes_eph_label),
+              max_ing = max(Ing_Ocup_Principal, na.rm = T),
+              min_ing = min(Ing_Ocup_Principal, na.rm = T),
+              media_ing = weighted.mean(Ing_Ocup_Principal, PONDIIO, na.rm = T),
+              mediana_ing = weighted.median(Ing_Ocup_Principal, PONDIIO, na.rm = T))
   
   resultados[[valor]] <-  tabla_resumen
   
@@ -232,8 +239,20 @@ for (valor in (seq(length(vector_valores)))) {
 
 #Veamos una de las tablas que generamos:
 
-vector_valores[3]
 resultados[[3]]
+
+```
+
+También podemos presentar nuestros resultados de una manera más amigable con quien está leyendo, o listo para copiar e incluir en un informe:
+
+```{r}
+
+for (valor in (seq(length(vector_valores)))) {
+  
+  print(paste0("Para el sector ", unique(resultados[[valor]]$sector), ", el ingreso máximo alcanzado por un varón fue de $", resultados[[valor]]$max_ing[resultados[[valor]]$SEXO == "Varones"], ". Para las mujeres, por otro lado, fue de $", resultados[[valor]]$max_ing[resultados[[valor]]$SEXO == "Mujeres"]))
+  
+  
+}
 
 ```
 
@@ -248,9 +267,48 @@ fun_ej <-function(argumentos){
 }
 ```
 
-En este caso, vamos a utilizar esta herramienta -en conjunto con la iteración- para generar una serie de gráficos.
+En este caso, vamos a utilizar esta herramienta -en conjunto con la iteración- para generar una serie de gráficos donde se visualice la distribución de los ingresos de las mujeres y los varones que se desempeñan en cada sector productivo en la base de datos.
 
-Primero, creamos nuestra función:
+Primero, vamos a generar los datos que vamos a graficar: 
+
+```{r}
+vector_valores <- unique(base$caes_eph_label)
+
+#En esta lista vamos a guardar nuestros resultados
+datos_graf <- list()
+
+for (valor in (seq(length(vector_valores)))) {
+  
+  tabla_resumen <- base %>% 
+    filter(caes_eph_label == vector_valores[valor]) %>% 
+    filter(Ing_Ocup_Principal > 0) %>% 
+     filter(Horas > 0) %>% 
+    group_by(SEXO, Ing_Ocup_Principal, Horas) %>% 
+    summarise(Casos = sum(PONDIIO, na.rm = T),
+              sector = unique(caes_eph_label)) 
+  
+  datos_graf[[valor]] <-  tabla_resumen
+  
+}
+
+
+```
+
+
+```{r}
+
+ggplot(datos_graf[[1]], aes(x = Horas, y = Ing_Ocup_Principal, size =Casos, color = SEXO)) +
+        geom_point(alpha = 0.5)+
+        theme_minimal()+
+        labs(title = unique(datos_graf[[1]]$sector),
+             y = "Ingreso de la ocupación principal",
+             x = "Horas semanales trabajadas",
+             color = "Sexo")
+
+```
+
+
+Luego, creamos nuestra función:
 
 ```{r}
 
@@ -266,9 +324,9 @@ Luego, la aplicamos de forma iterativa:
 
 ```{r}
 
-for (i in seq(length(resultados))) {
+for (i in seq(length(datos_graf))) {
   
-  crear_grafico(resultados[[i]])
+  crear_grafico(datos_graf[[i]])
   
 }
 
