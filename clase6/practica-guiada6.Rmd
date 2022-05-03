@@ -18,10 +18,18 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
 library(tidyverse)
 library(eph)
 library(spatstat)
+options(scipen = 9999)
 options(dplyr.summarise.inform = FALSE)
+
 ```
 
 # Introducción
+
+En la clase de hoy vamos a explorar nuevas formas de procesar una base de datos y visualizar nuestros resultados.
+
+En particular, vamos a introducir el paquete *plotly* para generar visualizaciones interactivas.
+
+Por último, vamos a trabajar con *funciones* e *iteraciones* para escalar nuestra capacidad de análisis de datos y presentación de resultados.
 
 # Visualización interactiva
 
@@ -141,7 +149,7 @@ La iteración es una herramienta para repetir la misma tarea con múltiples inpu
 
 Un loop es una estructura de código que nos permite aplicar iterativamente un mismo conjunto de comandos, variando el valor de una variable. Su estructura general es la siguiente:
 
-```{r}
+```{r, eval=F}
 for (variable in vector) {
   #Operaciones
 }
@@ -267,7 +275,7 @@ fun_ej <-function(argumentos){
 }
 ```
 
-En este caso, vamos a utilizar esta herramienta -en conjunto con la iteración- para generar una serie de gráficos donde se visualice la distribución de los ingresos de las mujeres y los varones que se desempeñan en cada sector productivo en la base de datos.
+En este caso, vamos a utilizar esta herramienta -en conjunto con la iteración- para generar una serie de gráficos donde se visualice la distribución de los ingresos de las mujeres y los varones que se desempeñan en cada sector productivo de acuerdo con las horas que trabajan por semana.
 
 Primero, vamos a generar los datos que vamos a graficar: 
 
@@ -283,6 +291,7 @@ for (valor in (seq(length(vector_valores)))) {
     filter(caes_eph_label == vector_valores[valor]) %>% 
     filter(Ing_Ocup_Principal > 0) %>% 
      filter(Horas > 0) %>% 
+    filter(Horas != 999) %>% 
     group_by(SEXO, Ing_Ocup_Principal, Horas) %>% 
     summarise(Casos = sum(PONDIIO, na.rm = T),
               sector = unique(caes_eph_label)) 
@@ -295,34 +304,35 @@ for (valor in (seq(length(vector_valores)))) {
 ```
 
 
-```{r}
 
-ggplot(datos_graf[[1]], aes(x = Horas, y = Ing_Ocup_Principal, size =Casos, color = SEXO)) +
-        geom_point(alpha = 0.5)+
-        theme_minimal()+
-        labs(title = unique(datos_graf[[1]]$sector),
-             y = "Ingreso de la ocupación principal",
-             x = "Horas semanales trabajadas",
-             color = "Sexo")
-
-```
-
-
-Luego, creamos nuestra función:
+Luego, creamos nuestra función que grafica la información de una tabla:
 
 ```{r}
 
 crear_grafico = function(tabla){
   
-  +ggsave(paste0("clase6/graficos/",xx,".png"))
+  ggplot(tabla, aes(x = Horas, y = Ing_Ocup_Principal, size =Casos, color = SEXO)) +
+        geom_point(alpha = 0.4)+
+        theme_minimal()+
+        scale_color_manual(values = c("deeppink4","mediumseagreen"))+
+         scale_size_continuous(range = c(2, 15))+
+        scale_y_continuous(labels = function(x) paste0("$",x))+
+        facet_wrap(~SEXO, scales = "fixed", nrow = 1)+
+        labs(title = unique(tabla$sector),
+             y = "Ingreso de la ocupación principal",
+             x = "Horas semanales trabajadas",
+             color = "Sexo")+
+        theme(legend.position = "bottom")+
+    ggsave(paste0("clase6/graficos/",tolower(str_replace_all(unique(tabla$sector), " ", "_")),".png"))
   
 }
 
+
 ```
 
-Luego, la aplicamos de forma iterativa:
+Finalmente, la aplicamos de forma iterativa:
 
-```{r}
+```{r, eval=F}
 
 for (i in seq(length(datos_graf))) {
   
