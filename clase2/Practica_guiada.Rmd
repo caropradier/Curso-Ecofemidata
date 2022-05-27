@@ -4,7 +4,7 @@ output:
   html_document:
     toc: TRUE
     toc_float: TRUE
-author: "Carolina Pradier y Laia Domenech Burin"
+author: "EcoFemiData"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
@@ -26,7 +26,7 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, collapse=TRUE, hi
 - Paquetes instalables → siempre hay nuevas **funcionalidades “customizables”** para lo que queremos hacer. Los paquetes que veremos en este curso, `tidyverse` y `ggplot` son dos ejemplos de estos paquetes.
 
 ## Pantalla de trabajo
-![Esquema de RStudio](../imgs/Interfaz_RStudio.jpg)
+![Esquema de RStudio](./imgs/Interfaz_RStudio.jpg)
 - El trabajo en R se hace desde el **panel de edición**. 
 - Los resultados aparecen en la **consola**.
 - Los gráficos aparecen en el **panel de salida**. 

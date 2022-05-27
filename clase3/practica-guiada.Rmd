@@ -1,5 +1,5 @@
 ---
-title: "Clase 3"
+title: "Clase 3 - Introducción al tidyverse"
 output: 
   html_document:
     toc: TRUE
@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
 - La clase pasada cerramos la parte práctica instalando el paquete **Tidyverse**. Sin embargo, al hacerlo no estaban instalando solo un paquete, sino una colección de paquetes de R que están diseñados para el análisis de datos. 
 - La lógica de tener estos paquetes juntos es que todos ellos comparten la misma filosofía, gramática, y estructuras de datos. 
 
-![Mundillo tidyverse](./imgs/tidyverse.jpg)
+![Mundillo tidyverse](./imgs/tidyverse.jpg){width=50%}
 
 - Los principales paquetes que están en este mundo son
   + `magrittr`: que introduce la **pipe** (%>%)
@@ -56,6 +56,18 @@ Como nuestro archivo está en formato `csv`, vamos a usar la primera función. L
 df <- read_csv('./data/menstru_marzo_2022.csv')
 ```
 Como podrán ver, es una sintaxis simple. Simplemente indico la ruta donde está guardado el archivo y se lee la base. Como estoy corriendo el código desde un documento `RMD`, automáticamente se pone la ruta de trabajo en la carpeta donde está guardado este documento (en este caso, `clase3`). 
+
+Démosle un vistazo a la estructura de esta base:
+
+```{r}
+#Nombre de las columnas
+colnames(df)
+```
+```{r}
+#Cantidad de filas
+nrow(df)
+```
+
 
 ## Pipes: la gramática básica de tidyverse
 
@@ -100,13 +112,13 @@ Todas pueden ser usadas en conjunto con `group_by()` que cambia el objeto de cad
 - La forma básica de esta función es `select(nombre_de_la_columna)`.
 
 ```{r}
-select_prueba_1 <- df %>% select(provincia)
+select_prueba_1 <- df %>% select(Provincia)
 head(select_prueba_1)
 ```
 - Puedo seleccionar más de una columna con la coma: 
 
 ```{r}
-select_prueba_2 <- df %>% select(provincia, departamento, anio)
+select_prueba_2 <- df %>% select(Provincia, Categoría, Marca)
 
 head(select_prueba_2)
 ```
@@ -114,7 +126,7 @@ head(select_prueba_2)
 - También se puede seleccionar un intervalo de columnas, usando el `:`
 
 ```{r}
-select_prueba_3 <- df %>% select(anio, departamento, provincia, tipo_lugar:otro_motivo_origen_registro)
+select_prueba_3 <- df %>% select(Provincia, Categoría, Marca, Region:precio_unidad)
 
 head(select_prueba_3)
 ```
@@ -129,27 +141,20 @@ head(select_prueba_4)
 
 - Se puede hacer una anti-selección (o sea, elegir todas las columnas menos algunas especificadas)
 ```{r}
-ncol(df)
+select_prueba_5 <- df %>% select(-c(Sucursal, Dirección, Localidad, Nombre))
 
-select_prueba_5 <- df %>% select(-c(federal, radio_censal))
-
-ncol(select_prueba_5)
+head(select_prueba_5)
 ```
 
 - También, se pueden seleccionar columnas según criterios con funciones auxiliares:
   + `starts_with` : selecciona columnas que empiecen con el string que pasemos.
   + `ends_with` : selecciona columnas que terminen con el string que le pasemos. 
   + `contains` : selecciona columnas que contengan la palabra que indicamos. 
+
 ```{r}
-select_prueba_6 <- df %>% select(ends_with("victima"))
+select_prueba_6 <- df %>% select(contains("unidad"))
 
 head(select_prueba_6)
-```
-
-```{r}
-select_prueba_7 <- df %>% select(contains("inculpado"))
-
-head(select_prueba_7)
 ```
 
 ### filter()
@@ -157,46 +162,37 @@ head(select_prueba_7)
 - Esta función tiene el siguiente esquema: `filter(CONDICIÓN)`
 - La clase 1 vimos los distintos operadores (lógicos, arimétricos, relacionales) que podemos usar para escribir estos formatos condicionales. 
 
-Supongamos que queremos quedarnos con los registros de homicidios que se realizaron de 2019 en adelante:
+Supongamos que queremos quedarnos con los registros de tampones:
 
 ```{r}
-base_filtrada_1 <- df %>% filter(anio >= 2019)
+base_filtrada_1 <- df %>% filter(Categoría == "tampones")
 
-table(df$anio)
-table(base_filtrada_1$anio)
+table(df$Categoría)
+table(base_filtrada_1$Categoría)
 ```
 
-O si quisiéramos nada más los registros de homicidios sucedidos en domicilios particulares:
+Los condicionales también pueden combinarse. Podríamos traer todos los registros de las regiones NEA y NOA:
 
 ```{r}
-base_filtrada_2 <- df %>% filter(tipo_lugar == "Domicilio particular")
+base_filtrada_3 <- df %>% filter(Region == "NOA" | Region == "NEA")
 
-table(df$tipo_lugar)
-table(base_filtrada_2$tipo_lugar)
+table(df$Region)
+table(base_filtrada_3$Region)
 ```
 
-Los condicionales también pueden combinarse. Podríamos traer todos los registros sucedidos en domicilios particulares y la vía pública:
+También podemos combinar los operadores lógicos para hacer un filtrado por condiciones múltiples. Por ejemplo, si quisiéramos todos los registros de toallitas en el NOA y el NEA, hacemos lo siguiente: 
 
 ```{r}
-base_filtrada_3 <- df %>% filter(tipo_lugar == "Vía pública" | tipo_lugar == "Domicilio particular")
+base_filtrada_4 <- df  %>% filter(Region %in% c("NOA", "NEA") & Categoría == "tampones")
 
-table(df$tipo_lugar)
-table(base_filtrada_3$tipo_lugar)
-```
-
-También podemos combinar los operadores lógicos para hacer un filtrado por condiciones múltiples. Por ejemplo, si quisiéramos todos los registros de homicidios en domicilio particular o la vía pública realizados en Buenos Aires, podríamos hacer esto. 
-
-```{r}
-base_filtrada_4 <- df  %>% filter(tipo_lugar %in% c("Vía pública", "Domicilio particular") & provincia == "BUENOS AIRES")
-
-table(base_filtrada_4$provincia, base_filtrada_4$tipo_lugar)
+table(base_filtrada_4$Region, base_filtrada_4$Categoría)
 ```
 
 El filtrado también puede aplicarse sobre columnas para quedarnos sólo con las filas que tienen valores -es decir, borrar los NA. 
 
-Vamos a borrar los casos que tienen NA en la categoría `otro_en_ocasion_otro_delito`, para quedarnos únicamente con los casos de homicidios que se hicieron en relación a otro delito. Probemos que pasa si usamos el operador `!=`
+Vamos a borrar los casos que tienen NA en la categoría `Comercio`. Probemos que pasa si usamos el operador `!=`
 ```{r}
-base_filtrada_5 <- df  %>% filter(otro_en_ocasion_otro_delito != NA) 
+base_filtrada_5 <- df  %>% filter(Comercio != NA) 
 nrow(base_filtrada_5)
 ```
 
@@ -204,7 +200,7 @@ nrow(base_filtrada_5)
 
 Resulta que los NA son bastante tramposos en R. Casi cualquier operación con uno de ellos va a devolver otro NA, y es por esto que no debemos trabajar con operadores a la hora de filtrarlos, sino que debemos usar la función `is.na()`
 ```{r}
-base_filtrada_5 <- df  %>% filter(!is.na(otro_en_ocasion_otro_delito))
+base_filtrada_5 <- df  %>% filter(!is.na(Comercio))
 nrow(base_filtrada_5)
 ```
 
@@ -213,7 +209,9 @@ nrow(base_filtrada_5)
 - Esta función solo requiere indicar `NOMBRE_NUEVO = NOMBRE_VIEJO`
 
 ```{r}
-df %>% rename(otro_delito_categorias = otro_en_ocasion_otro_delito) %>% select(Id_hecho, en_ocasion_otro_delito, otro_delito_categorias)
+rename <- df %>% rename(precio_lista = Precio.de.lista) %>% select(Categoría, precio_lista, unidades, precio_unidad)
+
+head(rename)
 ```
 
 ### mutate()
@@ -221,42 +219,26 @@ df %>% rename(otro_delito_categorias = otro_en_ocasion_otro_delito) %>% select(I
 - Esta función nos permite crear y modificar columnas.
 - Su sintaxis es `mutate(nombre_de_la_columna = valores_de_la_columna)`  
 
-Por ejemplo, podemos crear una columna simple con el nombre de la base:
+Por ejemplo, podemos crear una columna con la diferencia que tiene cada producto con el promedio de precios de los productos. Como no queremos mezclar los precios de toallistas y tampones y (por ahora) no vimos cómo hacer operaciones sobre grupos, vamos a usar la `base_filtrada_1` que tenía nada más los precios de tampones. 
+
 ```{r}
-df <- df %>% mutate(columna_ejemplo = "Registro de homicidios dolosos 2017-2020") 
-table(df$columna_ejemplo)
+base_filtrada_1 <- base_filtrada_1 %>% mutate(diferencia_precios = precio_unidad-mean(precio_unidad)) 
+
+summary(base_filtrada_1$diferencia_precios)
 ```
 
-Pero también podemos hacer algo más util. Por ejemplo, si echamos un vistazo a la información de la provincia vemos que estos valores están todos en mayúscula:
-
+- Es una función muy útil a la hora de hacer nuevos grupos de variables, sobre todo cuando la usamos con la función `case_when()`. Supongamos que queremos agrupar los productos en dos grandes grupos: si su precio está por debajo de la media o por arriba de la media. 
 ```{r}
-df %>% select(provincia) %>% head()
-```
-
-Vamos a guardar los valores como nombres propios con la función `str_to_title()` del paquete `stringr`.
-
-```{r}
-df %>% mutate(provincia = str_to_title(provincia))%>%
-        select(provincia) %>%
-        head()
-```
-
-- Es una función muy útil a la hora de recodificar variables, sobre todo cuando la usamos con la función `case_when()`. Supongamos que queremos agrupar los tipos de relaciones de víctima con el inculpado en siete grupos: familiar, laboral, de pareja, sin relación, otros, sin datos y no corresponde. 
-```{r}
-df <- df %>% mutate(
-        relacion_agrup = case_when(
-                relacion_victima_inculpado %in% c("Hermano/a", "Hijo/a", "Otros vínculos familiares", "Padre/Madre") ~ "Familiar",
-                relacion_victima_inculpado %in% c("Cliente / proveedor", "Empleado", "Empleador", "Socio (Relación comercial)") ~ "Laboral", 
-                relacion_victima_inculpado %in% c("Conyuge/ pareja", "Ex conyuge / ex pareja") ~ "De pareja",
-                relacion_victima_inculpado %in% c("Sin relación") ~ "Sin relación",
-                relacion_victima_inculpado %in% c("Otras relaciones no familiares") ~ "Otros",
-                relacion_victima_inculpado == "Sin determinación" ~ "Sin datos",
-                relacion_victima_inculpado == "No corresponde" ~ "No corresponde"
+base_filtrada_1 <- base_filtrada_1 %>% mutate(
+        grupo_precios = case_when(
+          diferencia_precios < 0 ~ "Debajo de la media",
+          diferencia_precios > 0 ~ "Encima de la media",
+          diferencia_precios == 0 ~ "Igual a la media"
         )
 )
 
-table(df$relacion_agrup)
+table(base_filtrada_1$grupo_precios)
 
 ```
 
-
+¡Con eso terminamos por hoy! Ya pueden pasar a la parte práctica. 
