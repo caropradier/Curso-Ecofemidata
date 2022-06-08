@@ -114,17 +114,23 @@ base %>%
 
 ## ungroup()
 
-Finalmente, para seguir trabajando con el objeto que está agrupado sin esos grupos, hay que usar la función **ungroup()**.
+Finalmente, para seguir trabajando con el objeto que está agrupado sin esos grupos, hay que usar la función **ungroup()**. Si no, por default R deja el objeto (nuestra tabla) agrupado por la primera variable que aparece como argumento de **group_by()**.
 
 ```{r}
 base %>%
   filter(ESTADO=="Ocupado") %>% #Me quedo con la población ocupada
   group_by(SEXO, CAT_OCUP) %>% 
   summarise(Casos = sum(PONDERA)) %>% 
-  ungroup() %>% 
+  
+  #Prueba: ¿qué pasa si comentamos las siguientes 2 líneas de código?
+  ungroup() %>%  
   group_by(SEXO) %>% 
+  
+  
   mutate(Total = sum(Casos),
          "Frecuencia relativa" = round((Casos/Total)*100,1))
+
+
 ```
 
 
@@ -135,8 +141,11 @@ En algunos casos, vamos a necesitar transformar la presentación de la informaci
 ## pivot_wider()
 
 *pivot_wider()* crea variables a partir de filas, y “ensancha” la base de datos. Tiene los siguientes parámetros: 
+
 + id_cols: la columna de ID, que no queremos que pierda su formato 
+
 + names_from: indico en qué columna están los nombres de las variables
+
 + values_from: indico en qué columna están los valores de las variables
 
 Veamos un ejemplo:
@@ -154,8 +163,11 @@ base %>%
 
 *pivot_longer()* es la operación inversa. 
 “Alarga” los datos convirtiendo columnas a filas. Tiene los siguientes parámetros: 
+
 + cols: elijo las columnas que quiero pasar a filas 
+
 + names_to: indico el nombre de la columna que va a contener las variables elegidas 
+
 + values_to: indico el nombre de la columna que va a contener los valores de las variables
 
 Revertimos la operación del ejemplo anterior:
@@ -189,6 +201,7 @@ Para unir bases de datos a partir de un identificador común vamos a recurrir a 
 Para utilizar estas funciones, vamos a tener que explicitar:
 
 + qué dataframes queremos unir.
+
 + cuál (o cuáles) es (son) la(s) columna(s) con la información correspondiente al identificador.
 
 
@@ -233,6 +246,9 @@ tabla_1 <- base %>%
             Poblacion = sum(PONDERA),
             "Tasa de actividad" = round((PEA/Poblacion)*100,1)) %>% 
   select(-PEA,-Poblacion) 
+
+head(tabla_1)
+
 ```
 
 Luego, vamos a calcularla clasificando a las amas de casa como parte de la población económicamente activa en nuestra tabla 2:
@@ -246,6 +262,9 @@ tabla_2 <- base %>%
             Poblacion = sum(PONDERA),
             "Tasa de actividad corregida" = round((PEA/Poblacion)*100,1)) %>% 
   select(-PEA,-Poblacion) 
+
+head(tabla_2)
+
 ```
 
 Ahora, vamos a unir las tablas y calcular la diferencia:
@@ -275,6 +294,12 @@ tabla_1 <-  base %>%
          "Frecuencia relativa" = round((Casos/Total)*100,1)) %>% 
   select(-Casos, -Total)
 
+head(tabla_1)
+
+```
+
+```{r}
+
 tabla_2 <- base %>% 
   filter(ESTADO == "Ocupado" & CAT_OCUP == "Empleado") %>% 
   group_by(SEXO, CAT_OCUP, DESC_JUBILATORIO) %>% 
@@ -285,7 +310,9 @@ tabla_2 <- base %>%
          "Frecuencia relativa" = round((Casos/Total)*100,1)) %>% 
   select(-Casos, -Total) %>% 
   pivot_wider(.,id_cols = c(SEXO, CAT_OCUP), names_from = DESC_JUBILATORIO, values_from = "Frecuencia relativa")
-  
+
+head(tabla_2)
+
 ```
 
 
@@ -323,6 +350,9 @@ tabla_2 <- base %>%
   mutate(Total = sum(Casos),
          "Frecuencia relativa" = round((Casos/Total)*100,1)) %>% 
   select(-Casos, -Total) 
+
+head(tabla_2)
+
 ```
 
 Y luego aplicábamos la misma unión:
@@ -330,11 +360,31 @@ Y luego aplicábamos la misma unión:
 ```{r}
 left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP"))
 ```
+
 ¿Qué pasó? Ahora el dato de proporción de Varones/Mujeres empleados aparece duplicado. 
 
 ¿Por qué? 
 
 Porque a cada combinación de las variables identificadoras (SEXO y CAT_OCUP) les correspondía más de una fila en la tabla 2.
+
+¿Cómo lo solucionamos? 
+
+La solución no es la misma en todos los casos (¡a veces lo que hay detrás de la duplicación es un error conceptual! ¿estábamos intentando generar un objeto que tiene sentido?). 
+
+Una de las herramientas que pueden ayudarnos es la función **unique()**, que al aplicarse a un objeto (vector, dataframe, etc.) nos lo devuelve sin duplicaciones. Por ejemplo:
+
+```{r}
+
+left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP")) %>% 
+  select("SEXO","CAT_OCUP")
+
+
+left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP")) %>% 
+  select("SEXO","CAT_OCUP") %>% 
+  unique()
+
+```
+
 
 # Trabajo con fechas
 
@@ -491,4 +541,4 @@ write.xlsx(list("resultado_cat_ocup"=tabla_1 ,
 ```
 
 
-# Algunos ejercicios para empezar a practicar
+¡Terminamos! Ahora, vamos a la parte práctica. 

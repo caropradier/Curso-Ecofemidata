@@ -43,7 +43,7 @@ base <- eph::get_microdata(year = 2019,
                             type = "individual", 
                             destfile = "bases_fuentes/eph_2019_T1.rds")  %>% 
   organize_caes()%>%  #recodifica la variable que indica el sector de la ocupación
-  select(ESTADO,"SEXO" = CH04, "Ing_Ocup_Principal"= P21, PONDIIO,caes_eph_label, "Horas" = PP3E_TOT) %>% 
+  select(ESTADO,"SEXO" = CH04, "Ing_Ocup_Principal"= P21, PONDIIO,caes_eph_label, "Horas" = PP3E_TOT, PONDERA) %>% 
   
   mutate(ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
                             ESTADO == 2 ~ "Desocupado",
@@ -72,9 +72,11 @@ ingresos <- base %>%
   pivot_wider(id_cols = caes_eph_label, names_from = SEXO, values_from = Ingreso_medio) %>% 
   mutate(Brecha =  ((Varones-Mujeres)/Varones))
 
-participacion <-  base %>% 
+head(ingresos)
+
+feminizacion <-  base %>% 
   group_by(SEXO,caes_eph_label) %>%
-  summarise(Casos = n()) %>% 
+  summarise(Casos = sum(PONDERA)) %>% 
   ungroup() %>% 
   group_by(caes_eph_label) %>% 
   mutate(Total = sum(Casos),
@@ -82,8 +84,10 @@ participacion <-  base %>%
   filter(SEXO == "Mujeres") %>% 
   select(caes_eph_label, Prop)
 
+head(feminizacion)
+
 ingresos <- ingresos %>% 
-  left_join(.,participacion, by = "caes_eph_label")
+  left_join(.,feminizacion, by = "caes_eph_label")
 
 ingresos
 
@@ -103,6 +107,9 @@ library(plotly)
 En nuestro gráfico, vamos a graficar el ingreso medio de cada sector productivo para trabajadores de cada sexo, coloreando cada burbuja de acuerdo con la magnitud de la brecha, y determinando el tamaño de la burbuja según la proporción de trabajadoras mujeres en el sector.
 
 ```{r}
+
+#La sintaxis es un poco distinta a la de ggplot, más abajo podemos ver cómo recurrir a ella si nos resulto más cómoda
+
 plot_ly(ingresos, x = ~Mujeres, y = ~Varones, 
         color = ~Brecha, colors = 'Spectral',
         type = 'scatter', mode = 'markers',  marker = list(size = ~Prop, opacity = 0.9),
@@ -113,11 +120,74 @@ plot_ly(ingresos, x = ~Mujeres, y = ~Varones,
         ) %>% 
        layout(title = 'Ingreso medio y brecha salarial por sector productivo',
          xaxis = list(showgrid = FALSE),
-         yaxis = list(showgrid = FALSE))
+         yaxis = list(showgrid = FALSE),
+         font = list(family ="Times New Roman"))
 ```
 Prueben pasar el mouse por encima del gráfico, moverlo, hacer zoom, etc. 
 
 ¿Qué análisis podemos hacer de la información representada? 
+
+
+## ggplotly()
+
+La función **ggplotly()** convierte nuestros ggplots en plotly. De esta forma, podemos tomar cualquiera de las visualizaciones que aprendimos a hacer la clase pasada y *hacerla interactiva*. 
+
+Por ejemplo:
+
+```{r}
+
+feminizacion <-  base %>% 
+  group_by(SEXO,caes_eph_label) %>%
+  summarise(Casos = sum(PONDERA)) %>% 
+  ungroup() %>% 
+  group_by(caes_eph_label) %>% 
+  mutate(Total = sum(Casos),
+         Prop = (Casos/Total)*100)%>% 
+  filter(SEXO == "Mujeres") %>% 
+  select(caes_eph_label, Prop)
+
+
+feminizacion
+
+```
+
+
+```{r}
+#paleta de colores divina!
+library(wesanderson)
+
+
+plot_estatico <- feminizacion %>% 
+  ggplot(.,aes(x = fct_reorder(caes_eph_label,Prop), y = Prop, 
+        fill = Prop,
+        #para que el hovertext nos quede como queremos 
+        text = paste(caes_eph_label, '<br>Proporción de trabajadoras mujeres:', paste0(round(Prop,1), "%"))
+  )
+        )+
+  geom_col(alpha = 0.9)+
+  theme_minimal()+
+  coord_flip()+
+  labs(title = 'Tasa de feminización de las ramas de actividad',
+       x="",y="")+
+  scale_y_continuous(labels = function(x) paste0(x,"%"))+
+  scale_x_discrete(labels = function(x) str_wrap(x,25))+
+  scale_fill_gradientn(colours = wes_palette("Zissou1", 100, type = "continuous")) +
+  guides(fill = "none")
+
+
+plot_estatico
+
+
+```
+
+```{r}
+#lo hacemos interactivo
+
+ggplotly(plot_estatico, 
+         tooltip = "text") %>% 
+  layout(font = list(family ="Times New Roman"))
+```
+
 
 
 ### Bonus
@@ -304,6 +374,15 @@ for (valor in (seq(length(vector_valores)))) {
 ```
 
 
+Veamos cómo queda algún elemento:
+
+```{r}
+
+datos_graf[[2]]
+
+```
+
+
 
 Luego, creamos nuestra función que grafica la información de una tabla:
 
@@ -342,7 +421,7 @@ for (i in seq(length(datos_graf))) {
 
 ```
 
-Los resultados de nuestro prcesamiento están guardados en la carpeta graficos de la clase 6.
+Los resultados de nuestro procesamiento están guardados en la carpeta graficos de la clase 6.
 
 
-# Algunos ejercicios para empezar a practicar
+¡Terminamos! Ahora, vamos a la parte práctica. 
