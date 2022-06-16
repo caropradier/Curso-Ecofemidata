@@ -55,7 +55,11 @@ Como nuestro archivo está en formato `csv`, vamos a usar la primera función. L
 ```{r}
 df <- read_csv('./data/menstru_marzo_2022.csv')
 ```
-Como podrán ver, es una sintaxis simple. Simplemente indico la ruta donde está guardado el archivo y se lee la base. Como estoy corriendo el código desde un documento `RMD`, automáticamente se pone la ruta de trabajo en la carpeta donde está guardado este documento (en este caso, `clase3`). 
+Como podrán ver, es una sintaxis simple. Simplemente indico la ruta donde está guardado el archivo y se lee la base. Por default, R pone la ruta de trabajo en la carpeta donde está guardado el documento que se abrió (en este caso, `clase3`). 
+
+Otra manera "manual" de importar bases de datos es con el botón de **Import Dataset** en la pantalla del Enviroment. Desde ahí puedo seleccionar el formato de la base que quiero importar, la ruta, y R me va a mostrar el código que tendría que usar para importarlo: 
+
+![Importación desde R](./imgs/import.png){width=80%}
 
 Démosle un vistazo a la estructura de esta base:
 
@@ -71,7 +75,7 @@ nrow(df)
 
 ## Pipes: la gramática básica de tidyverse
 
-Más arriba mencionamos que el paquete `magrittr` introduce la pipe y la señalamos como este símbolo `%>%`. La pipe es una **forma de escribir** del mundo tidyverse, que indica que vamos a realizar de terminada operación sobre el objeto que está a la izquierda. Sirve para indicar una secuencia de acciones. 
+Más arriba mencionamos que el paquete `magrittr` introduce la pipe y la señalamos como este símbolo `%>%`. La pipe es una **forma de escribir** del mundo tidyverse, que indica que vamos a realizar de terminada operación sobre el objeto que está a la izquierda. Sirve para indicar una secuencia de acciones. La podemos generar con el shortcut **Control + Shift + M**.
 
 Por ejemplo, para sacar la tabla de frecuencias de casos por provincia haríamos lo siguiente: 
 
@@ -156,9 +160,15 @@ select_prueba_6 <- df %>% select(contains("unidad"))
 
 head(select_prueba_6)
 ```
+Por último, puedo renombrar la columna dentro de la selección indicando `select(nombre_nuevo = nombre_viejo)`
+```{r}
+select_prueba_7 <- df %>% select(prov = Provincia)
+head(select_prueba_7)
+```
 
 ### filter()
 
+- Es una manera de filtrar filas. Esta función es a las filas lo que select a la columnas.
 - Esta función tiene el siguiente esquema: `filter(CONDICIÓN)`
 - La clase 1 vimos los distintos operadores (lógicos, arimétricos, relacionales) que podemos usar para escribir estos formatos condicionales. 
 
@@ -191,6 +201,7 @@ table(base_filtrada_4$Region, base_filtrada_4$Categoría)
 El filtrado también puede aplicarse sobre columnas para quedarnos sólo con las filas que tienen valores -es decir, borrar los NA. 
 
 Vamos a borrar los casos que tienen NA en la categoría `Comercio`. Probemos que pasa si usamos el operador `!=`
+
 ```{r}
 base_filtrada_5 <- df  %>% filter(Comercio != NA) 
 nrow(base_filtrada_5)
@@ -227,7 +238,21 @@ base_filtrada_1 <- base_filtrada_1 %>% mutate(diferencia_precios = precio_unidad
 summary(base_filtrada_1$diferencia_precios)
 ```
 
-- Es una función muy útil a la hora de hacer nuevos grupos de variables, sobre todo cuando la usamos con la función `case_when()`. Supongamos que queremos agrupar los productos en dos grandes grupos: si su precio está por debajo de la media o por arriba de la media. 
+- Es una función muy útil a la hora de hacer nuevos grupos de variables, sobre todo cuando la usamos con la función `case_when()`. Esta última nos sirve para explicitar valores a partir de condiciones lógicas. 
+
+```{r, eval = FALSE}
+case_when(
+  CONDICION_LOGICA1 ~ operacion o valor1,
+  ….,
+  CONDICION_LOGICAn ~ operacion o valorn, 
+  TRUE ~ operacion o valor
+  )
+```
+
+Con `TRUE ~ operacion o valor` indico qué sucede con los valores que no cumplen ningunas de las condiciones. Si no lo indico, esas filas adoptarán el valor `NA`. 
+
+Supongamos que queremos agrupar los productos en dos grandes grupos: si su precio está por debajo de la media o por arriba de la media. 
+
 ```{r}
 base_filtrada_1 <- base_filtrada_1 %>% mutate(
         grupo_precios = case_when(
