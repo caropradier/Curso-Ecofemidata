@@ -68,6 +68,7 @@ La unidad básica de este paquete, que llamaremos todas las veces que queramos h
 ggplot()
 ```
 
+
 No se ve nada: nos aparece como un lienzo en blanco. Esto es porque la creación de visualizaciones `ggplot` sigue un marco teórico: ["la gramática de los gráficos"](https://www.slideshare.net/0xdata/leland-wilkinson-h2oai-the-grammar-of-graphics-and-the-future-of-big-data-visualization-h2o-world-2019-nyc). A grandes rasgos, podemos decir que esta gramática requiere que definamos como mínimo dos cosas: 
 
 - una **geometría**: este es el recurso visual con el que vamos a mostrar la información. Pueden ser líneas (`geom_line()`), puntos (`geom_point()`), barras (`geom_bar()`), u otros.
@@ -76,6 +77,7 @@ No se ve nada: nos aparece como un lienzo en blanco. Esto es porque la creación
 
 ![Diagrama de David Keyes](./img/ggplot_resumen.png)
 
+
 Vamos a intentarlo. Asignémosle al atributo `x` la variable `SEXO`  y usemos `geom_bar` para mostrar los datos.
 
 ```{r}
@@ -83,11 +85,22 @@ ggplot(base, aes(x=SEXO))+
         geom_bar()
 ```
 
-La geometría `geom_bar` automáticamente hace un conteo de frecuencias de la variable que le pasemos en el eje x. De esta manera, en el eje y está el n de apariciones. Sin embargo, esto no nos va a servir si queremos mostrar proporciones por grupo. En estos casos, nos va a convenir combinar `ggplot` con un `group_by`. 
+
+La geometría `geom_bar` automáticamente hace un conteo de frecuencias de la variable que le pasemos en el eje x. De esta manera, en el eje y está el n de apariciones. Sin embargo, esto no nos va a servir si queremos mostrar proporciones por grupo. En estos casos, nos va a convenir combinar `ggplot` con un `group_by`. Por ejemplo, si quiero mostrar el porcentaje de varones y mujeres, tengo que hacer la tabla de frecuencias relativas y grafiacrla con `geom_col()`.
+
+```{r}
+tb_sexo <- base %>% group_by(SEXO) %>%
+                    summarize(n=n()) %>%
+                    mutate(perc = n/sum(n)*100)
+
+ggplot(tb_sexo, aes(x=SEXO, y = perc))+
+        geom_col()
+```
+
 
 ## Combinación con gramática tidy
 
-Al estar incluida en el mundo `tidyverse`, podemos combinar ggplot con otros objetos a través de `%>%`. Esto es útil sobre todo en combinación con la función `group_by()` para realizar conteos de frecuencias, sumas de columnas, y otras operaciones. Probemos agrupando el precio medio de productos por región y haciendo un gráfico que pone `Region` en el eje `x`, el `precio` en el eje `y` y usa la geometría `geom_bar()`. Como en este caso no queremos mostrar un conteo sino diferencias entre valores y asignamos el eje y nosotros, le pasamos el atributo `stat = 'identity'`. `ggplot` [tiene un amplio repertorio de geometrías](https://www.maths.usyd.edu.au/u/UG/SM/STAT3022/r/current/Misc/data-visualization-2.1.pdf).
+Al estar incluida en el mundo `tidyverse`, podemos combinar ggplot con otros objetos a través de `%>%`. Esto es útil sobre todo en combinación con la función `group_by()` para realizar conteos de frecuencias, sumas de columnas, y otras operaciones. Probemos agrupando el precio medio de productos por región y haciendo un gráfico que pone `Region` en el eje `x`, el `precio` en el eje `y` y usa la geometría `geom_bar()`. Como en este caso no queremos mostrar un conteo sino diferencias entre valores y asignamos el eje y nosotros, le pasamos el atributo `stat = 'identity'`. `ggplot` [tiene un amplio repertorio de geometrías](https://www.maths.usyd.edu.au/u/UG/SM/STAT3022/r/current/Misc/data-visualization-2.1.pdf), que también [podemos ver aquí](https://r-graph-gallery.com/).
 
 ```{r}
 base %>% group_by(REGION)%>%
@@ -109,6 +122,7 @@ base %>%
 
 ```
 
+
 Se puede elegir entre una variada colección de geoms para hacer toda clase de gráficos. Por ejemplo, `geom_boxplot()` crea _boxplots_ (o ["diagramas de caja"](https://economipedia.com/definiciones/diagrama-de-caja.html)). Al hacer boxplots es común mostrar un gráfico separado para cada categoría presente en la data a mostrar, usando para eso el eje de las `x` o de las `y`. ¡Hagamos eso mismo! Pongamos `PP08D1` en el eje `y`, `REGION` en el eje de las `x`, y a dibujar cajas con `geom_boxplot()`.
 
 ```{r}
@@ -117,6 +131,7 @@ base %>%
   ggplot(aes(x = REGION, y = PP08D1)) +
   geom_boxplot()
 ```
+
 Por último, podemos graficarlo en un gráficos de dispersión, o _scatterplots_. Consisten en puntos proyectados en un eje de coordenadas, donde cada punto representa una observación. 
 
 ```{r}
@@ -183,6 +198,7 @@ base %>%
   ggplot(aes(x=PP08D1, fill = SEXO))+ #Pasamos al eje x la edad y al eje y la mediana de ingresos
   geom_density(alpha = 0.5) #Aplicamos una geometría de densidad
 ```
+
 `ggplot` automáticamente asigna una paleta de colores predeterminada. Sin embargo, podemos instalar paquetes que introducen una gama de paletas nuevas, generalmente mejores que las que tiene R. Por ejemplo `viridis` trae paletas que, además de ser lindas, están diseñadas para poder imprimirse en escala de grises y ser interpretadas por personas con daltonismo. Probemos usar una paleta de este paquete en nuestro gráfico de arriba. Primero vamos a importar la librería `viridis`, y vamos a agregarle al código anterior la capa `scale_fill_viridis_d`.
 
 ```{r}
@@ -194,6 +210,18 @@ base %>%
   geom_density(alpha = 0.5)+ #Aplicamos una geometría de densidad
   scale_fill_viridis_d()
 
+```
+
+Otra librería con un amplio repertorio de colores bellos es la `wesanderson`, que utiliza paletas de colores de las películas de Wes Anderson. 
+
+```{r}
+library(wesanderson)
+
+base %>% 
+  filter(CAT_OCUP == "Empleado")%>% #Filtramos a las personas asalariadas
+  ggplot(aes(x=PP08D1, fill = SEXO))+ #Pasamos al eje x la edad y al eje y la mediana de ingresos
+  geom_density(alpha = 0.5)+ #Aplicamos una geometría de densidad
+  scale_fill_manual(values = wes_palette("Royal1"))
 ```
 
 Otra cosa que podemos hacer es asignar los colores manualmente. R viene con [varios colores que podemos llamar por su nombre en inglés](http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf), pero si queremos colores que no están disponibles en esta paleta podemos usar hex codes. Vamos a probarlo replicando el gráfico de barras de las variables `SEXO` y `ESTADO`.
@@ -210,6 +238,7 @@ base %>%
   scale_fill_manual(values = colores)
 
 ```
+
 ### Cambiando el "tema"
 
 Hemos podido ajustar los atributos gráficos que dependen estrechamente de los datos, como las escalas, los colores y los tamaños. ¿Pero que hay de otros componentes visuales que podríamos cambiar, como la tipografía y su tamaño o el color de fondo? 
@@ -227,6 +256,7 @@ base %>%
   theme_dark()
 ```
 
+
 Incluso podríamos definir a mano cada componente visual de los gráficos, creando así nuestro propio tema. No vamos a entrar en detalles ahora, pero para quien tenga interés el camino comienza por el uso de la [función `theme`](https://ggplot2-book.org/polishing.html#modifying-theme-components). También existen paquetes de R que agregan a nuestro arsenal nuevos temas listos para usar, como [`ggthemes`](https://ggplot2.tidyverse.org/reference/theme.html) y [`hrbrthemes`](https://cinc.rud.is/web/packages/hrbrthemes/). 
 
 Para cerrar el tema de los temas (¡ja!) va una recomendación. El tema minimalista "theme_minimal" viene con `ggplot2` por lo que ya lo tenemos disponible, y con sólo agregar la línea que lo aplica obtenemos un gráfico de aspecto más "limpio" que el del tema por default:
@@ -241,6 +271,7 @@ base %>%
   scale_fill_manual(values = colores)+
   theme_minimal()
 ```
+
 
 ## Otras formas de ver comparaciones 
 
@@ -258,6 +289,7 @@ base %>%
   facet_wrap(vars(REGION))+
   theme_minimal()
 ```
+
 ## Otros atributos estéticos
 
 `coord_flip()` y `theme(axis.text.x = element_text(angle = 90))` son atributos útiles para utilizar cuando las categorías del eje x son muy largas y se superponen. Probemos como funcionaría cada caso con el último gráfico que hicimos. 
@@ -319,8 +351,8 @@ base %>%
   coord_flip()+
         labs(
         title = "Condición de actividad por género",
-        subtitle = "desagregado a nivel regional",
-        caption = "Fuente: Encuesta Permanente de Hogares",
+        subtitle = "1° trimestre de 2019",
+        caption = "Encuesta Permanente de Hogares",
         x = "Condición de actividad",
         y = "n"
         )+

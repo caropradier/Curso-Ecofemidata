@@ -27,14 +27,24 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, collapse=TRUE, hi
 
 ## Pantalla de trabajo
 ![Esquema de RStudio](./imgs/Interfaz_RStudio.jpg)
+
 - El trabajo en R se hace desde el **panel de edición**. 
+
 - Los resultados aparecen en la **consola**.
+
 - Los gráficos aparecen en el **panel de salida**. 
+
+- Para modificar cómo se ve el entorno de ejecución (cambiar los colores, poner en "modo oscuro") tengo que ir a **Tools -> Global options -> Appearance**.  
+
 - Para crear un script nuevo desde el cual trabajar, hago clic en **File -> New File -> R Script.**
+
+- Para correr una línea de código, doy **Control + Enter**.
+
+- Los objetos que generamos en R **no se guardan automáticamente en la computadora**. Tenemos que usar funciones específicas según el formato (si exportamos un dataframe, una imagen, un gif, etc). 
 
 ### Ayuda en R
 
-El comando básico para averiguar qué hace una función o simplemente pedir ayuda es `help("nombre de la función")`
+El comando básico para averiguar qué hace una función o simplemente pedir ayuda es `help("nombre de la función")` o `?("nombre de la función")`. 
 
 ### Mensajes de error
 
@@ -60,7 +70,7 @@ La unidad mínima que pueden contener estos objetos son los *valores*. Existen c
 
 - `logical`: valores lógicos, un TRUE o FALSE
 
-Para guardar un objeto en R se usa el símbolo = o una flecha <-. Por convención, se usa la flecha. A la izquierda  siempre va el nombre que le vamos a asignar al objeto, y a la derecha, el valor. 
+Para guardar un objeto en R se usa el símbolo = o una flecha <-. Por convención, se usa la flecha. A la izquierda  siempre va el nombre que le vamos a asignar al objeto, y a la derecha, el valor. .
 
 ```{r}
 objeto_1 <- 55
@@ -76,6 +86,14 @@ objeto_1
 ```
 
 Los objetos pueden sobreescribirse. Esto quiere decir que si vuelvo a generar un objeto con el mismo nombre que tiene otro ya existente, el último reemplaza al primero. 
+
+¡Ojo! No es lo mismo imprimir el objeto en la consola que *generarlo*. Si yo nada más hago: 
+
+```{r}
+"Ejemplo"
+```
+
+El valor no quedará almacenado en ningún lado. Siempre que quiero guardar un objeto tengo que usar la flecha invertida `<-`. 
 
 ### Vectores
 R puede almacenar un conjunto de valores como un mismo objeto en un elemento llamado **vector**. 
@@ -113,13 +131,14 @@ nivel_ed
 ### Listas
 Las listas son una clase especial de vector: pueden contener elementos de cualquier tipo en su interior.
 ```{r, highlight=TRUE, prompt=TRUE, strip.white=FALSE, collapse=TRUE,   echo=TRUE}
-l<-list(1,"a",TRUE, 4.6)
-l
+mi_lista<-list(1,"a",TRUE, 4.6)
+mi_lista
 ```
+
 Por ejemplo, puedo llenar una lista de vectores: 
 ```{r}
-l <- list(c("A", "B", "C", "D"), c(1:15))
-l
+mi_lista <- list(c("A", "B", "C", "D"), c(1:15))
+mi_lista
 ```
 
 
@@ -162,9 +181,12 @@ str(data)
 summary(data)
 ```
 
-- `head()`: nos muestra las primeras 10 observaciones de la base. 
+- `head()`: nos muestra por default las primeras 10 observaciones de la base. Puedo modificar la cantidad de filas que quiero ver cambiando el argumento `n`. 
+
 ```{r}
 head(data)
+
+head(data, n = 20)
 ```
 
 ### Valores nulos
@@ -189,6 +211,7 @@ Los operadores también pueden aplicarse sobre vectores de la misma forma:
 n <- 1:10
 n+5
 ```
+
 **Pero** no sobre listas, ya que un operador arimétrico sólo se puede aplicar en un subconjunto numérico.  
 
 Los operadores también pueden pueden ser **relacionales**, para hacer comparaciones entre valores. Éstos son:
@@ -243,11 +266,11 @@ nivel_ed
 
 En el caso de una lista, tenemos que usar un doble corchete `[[]]` para acceder a sus valores. Por ejemplo:
 ```{r}
-l[[1]]
+mi_lista[[1]]
 ```
 Y podemos acceder al valor que queremos dentro de ese nivel de la lista con un corchete simple. 
 ```{r}
-l[[1]][2]
+mi_lista[[1]][2]
 ```
 
 En un dataframe, también podemos seleccionar un valor entre corchetes usando el orden `[fila, columna]`. Volvamos a nuestro ejemplo `data`:
@@ -287,9 +310,13 @@ fun<-function(argumentos){
 
 - Las funciones tienen un input (argumentos) y devuelven un output (valor)
 	+ Argumentos formales: los que están incluidos en la definición de la función
+
 	+ La función `formal()` devuelve los argumentos formales de una función
+
 	+ No todas las funciones en R usan argumentos formales
+
 	+ Los argumentos pueden estar "missing" o tener valores asignados por defecto
+
 	+ Para que una función devuelva un valor, debo almacenarlo en la misma e indicarlo con el comando `return()`
 
 Por ejemplo, si quiero crear una función que multiplique por 10 cualquier vector, hago lo siguiente:
@@ -323,7 +350,7 @@ Ya que estamos, podemos ver un popurrí de funciones de R base que resultan bast
 
 -`sum()`: realiza la suma de todos los valores de un vector.
 
--`round()`: hace un redondeo de los valores. 
+-`round()`: hace un redondeo de los valores. Con el argumento `digits` defino qué cantidad de decimales dejo. 
 
 ### Borrar objetos
 Finalmente, para borrar los objetos de R podemos usar la función `rm()`:
