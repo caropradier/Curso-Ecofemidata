@@ -34,13 +34,16 @@ Por último, vamos a introducir el paquete **lubridate** para trabajar con forma
 
 ## Base de datos
 
-Las variables de la Encuesta Permanente de Hogares están codificadas, voy a reemplazar los códigos por su significado mirando el diseño de registro de la base.
+La **Encuesta Permanente de Hogares** (EPH) es un programa nacional de producción sistemática y permanente de indicadores sociales que lleva a cabo el Instituto Nacional de Estadística y Censos (INDEC), que permite conocer las características sociodemográficas y socioeconómicas de la población (se publican sus datos trimestralmente).
+
+
+Las variables de la EPH están codificadas, voy a reemplazar los códigos por su significado mirando el *diseño de registro* de la base.
 
 ```{r levanto_base} 
  base <- eph::get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
                             type = "individual", #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                            destfile = "bases_fuentes/eph_2019_T1.rds") %>%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+                            destfile = "clase4/eph_2019_T1.rds") %>%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
   select(ESTADO,CAT_OCUP,"SEXO" = CH04, PONDERA) %>% 
   
   mutate(ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
@@ -213,7 +216,7 @@ Vamos a trabajar con la unión de tablas intentando responder la siguiente pregu
  base <- eph::get_microdata(year = 2019, 
                             trimester = 1, 
                             type = "individual", 
-                            destfile = "bases_fuentes/eph_2019_T1.rds") %>%  
+                            destfile = "clase4/eph_2019_T1.rds") %>%  
   select(CODUSU, NRO_HOGAR,"SEXO" = CH04, ESTADO, CAT_INAC, CAT_OCUP, "DESC_JUBILATORIO" = PP07H, PONDERA) %>% 
   
   mutate(SEXO = case_when(SEXO == 1 ~ "Varones",

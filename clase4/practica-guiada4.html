@@ -1511,7 +1511,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Clase 4 - Tidyverse</h1>
 <h4 class="author">Carolina Pradier y Laia Domenech Burin</h4>
-<h4 class="date">08 junio, 2022</h4>
+<h4 class="date">16 junio, 2022</h4>
 
 </div>
 
@@ -1534,13 +1534,19 @@ medidas resumen, unir dataframes y “pivotearlos”.</p>
 para trabajar con formatos de fecha.</p>
 <div id="base-de-datos" class="section level2">
 <h2>Base de datos</h2>
-<p>Las variables de la Encuesta Permanente de Hogares están codificadas,
-voy a reemplazar los códigos por su significado mirando el diseño de
-registro de la base.</p>
+<p>La <strong>Encuesta Permanente de Hogares</strong> (EPH) es un
+programa nacional de producción sistemática y permanente de indicadores
+sociales que lleva a cabo el Instituto Nacional de Estadística y Censos
+(INDEC), que permite conocer las características sociodemográficas y
+socioeconómicas de la población (se publican sus datos
+trimestralmente).</p>
+<p>Las variables de la EPH están codificadas, voy a reemplazar los
+códigos por su significado mirando el <em>diseño de registro</em> de la
+base.</p>
 <pre class="r"><code> base &lt;- eph::get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
                             type = &quot;individual&quot;, #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                            destfile = &quot;bases_fuentes/eph_2019_T1.rds&quot;) %&gt;%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+                            destfile = &quot;clase4/eph_2019_T1.rds&quot;) %&gt;%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
   select(ESTADO,CAT_OCUP,&quot;SEXO&quot; = CH04, PONDERA) %&gt;% 
   
   mutate(ESTADO = case_when(ESTADO == 1 ~ &quot;Ocupado&quot;,
@@ -1789,7 +1795,7 @@ varones y mujeres?</p>
 <pre class="r"><code> base &lt;- eph::get_microdata(year = 2019, 
                             trimester = 1, 
                             type = &quot;individual&quot;, 
-                            destfile = &quot;bases_fuentes/eph_2019_T1.rds&quot;) %&gt;%  
+                            destfile = &quot;clase4/eph_2019_T1.rds&quot;) %&gt;%  
   select(CODUSU, NRO_HOGAR,&quot;SEXO&quot; = CH04, ESTADO, CAT_INAC, CAT_OCUP, &quot;DESC_JUBILATORIO&quot; = PP07H, PONDERA) %&gt;% 
   
   mutate(SEXO = case_when(SEXO == 1 ~ &quot;Varones&quot;,
@@ -2094,7 +2100,7 @@ period_to_seconds(p_5_semanas)</code></pre>
 <pre><code>## [1] 3024000</code></pre>
 <p>En 5 semanas, ¿qué día es?</p>
 <pre class="r"><code>now() + p_5_semanas</code></pre>
-<pre><code>## [1] &quot;2022-07-13 17:54:20 -03&quot;</code></pre>
+<pre><code>## [1] &quot;2022-07-21 15:29:05 -03&quot;</code></pre>
 <p>Podemos agregarle días, meses, o años a una fecha:</p>
 <pre class="r"><code>fecha_2</code></pre>
 <pre><code>## [1] &quot;2020-08-04 13:40:43 UTC&quot;</code></pre>

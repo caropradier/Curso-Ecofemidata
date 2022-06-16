@@ -1,0 +1,38 @@
+---
+title: "Clase 7 - Workshop del proyecto integrador"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+author: "Carolina Pradier y Laia Domenech Burin"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+---
+
+
+```{r setup, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
+```
+
+
+```{r librerias}
+library(tidyverse)
+library(eph)
+library(spatstat)
+options(scipen = 9999)
+options(dplyr.summarise.inform = FALSE)
+
+```
+
+
+# Introducción
+
+En esta clase les proponemos algunas herramientas para abordar su proyecto integrador (y otros proyectos futuros).
+
+En particular, les traemos algunas **bases de datos** que pueden resultarles útiles a la hora de estudiar diversas aristas de las problemáticas de género.
+
+
+# La comunidad de R, ¿qué hacemos cuando el código no corre?
+
+
+
+# ENGHo
