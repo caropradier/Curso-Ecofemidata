@@ -1518,8 +1518,6 @@ integrador</h1>
 
 
 <pre class="r"><code>library(tidyverse)
-library(eph)
-library(spatstat)
 options(scipen = 9999)
 options(dplyr.summarise.inform = FALSE)</code></pre>
 <div id="introducción" class="section level1">
@@ -1590,540 +1588,23 @@ unen las bases de personas, hogares y gastos usando estas variables.</p>
 gastos &lt;- read.table(file = &quot;clase7/engho/engho2018_gastos.txt&quot;, sep = &quot;|&quot;, dec = &quot;.&quot;,
     header = TRUE, fill = TRUE)
 
-names(gastos)</code></pre>
-<pre><code>##  [1] &quot;id&quot;           &quot;provincia&quot;    &quot;miembro&quot;      &quot;pondera&quot;      &quot;region&quot;      
-##  [6] &quot;subregion&quot;    &quot;articulo&quot;     &quot;subclase&quot;     &quot;clase&quot;        &quot;grupo&quot;       
-## [11] &quot;division&quot;     &quot;r_imputado&quot;   &quot;cantidad&quot;     &quot;unmed&quot;        &quot;monto&quot;       
-## [16] &quot;forma_pago&quot;   &quot;tipo_negocio&quot; &quot;modo_adq&quot;     &quot;lugar_adq&quot;</code></pre>
-<pre class="r"><code>head(gastos, 10)</code></pre>
-<pre><code>##      id provincia miembro pondera region subregion articulo subclase clase
-## 1  8558        14       0     749      2        2A A0111105   A01111 A0111
-## 2  8558        14       0     749      2        2A A0111111   A01111 A0111
-## 3  8558        14       0     749      2        2A A0111111   A01111 A0111
-## 4  8558        14       0     749      2        2A A0111114   A01111 A0111
-## 5  8558        14       0     749      2        2A A0111201   A01112 A0111
-## 6  8558        14       0     749      2        2A A0111304   A01113 A0111
-## 7  8558        14       0     749      2        2A A0112201   A01122 A0112
-## 8  8558        14       0     749      2        2A A0112202   A01122 A0112
-## 9  8558        14       0     749      2        2A A0114401   A01144 A0114
-## 10 8558        14       0     749      2        2A A0115102   A01151 A0115
-##    grupo division r_imputado cantidad unmed  monto forma_pago tipo_negocio
-## 1   A011      A01          2    1.732     K 186.19          1            3
-## 2   A011      A01          2    4.330     K 173.20          1            2
-## 3   A011      A01          2   10.825     K 433.00          1            3
-## 4   A011      A01          2    2.165     K 151.55          1            3
-## 5   A011      A01          2    2.165     K  73.61          1            3
-## 6   A011      A01          2    2.165     K 108.25          1            3
-## 7   A011      A01          2    8.660     K 519.60          1            2
-## 8   A011      A01          2    3.031     K 394.03          1            3
-## 9   A011      A01          2   25.980     U 103.92          1            3
-## 10  A011      A01          2    3.897     L 216.50          1            3
-##    modo_adq lugar_adq
-## 1         1         2
-## 2         1         2
-## 3         1         2
-## 4         1         2
-## 5         1         2
-## 6         1         2
-## 7         1         2
-## 8         1         2
-## 9         1         2
-## 10        1         2</code></pre>
+# names(gastos)
+
+# head(gastos,10)</code></pre>
 <pre class="r"><code># un registro por hogar: cada hogar se identifica usando &#39;id&#39;
 hogares &lt;- read.table(file = &quot;clase7/engho/engho2018_hogares.txt&quot;, sep = &quot;|&quot;, dec = &quot;.&quot;,
     header = TRUE, fill = TRUE)
 
-names(hogares)</code></pre>
-<pre><code>##   [1] &quot;id&quot;               &quot;provincia&quot;        &quot;region&quot;          
-##   [4] &quot;subregion&quot;        &quot;trimestre&quot;        &quot;anio&quot;            
-##   [7] &quot;pondera&quot;          &quot;cv1c04&quot;           &quot;cv1c05_a&quot;        
-##  [10] &quot;cv1c05_b&quot;         &quot;cv1c05_c&quot;         &quot;cv1c05_d&quot;        
-##  [13] &quot;cv1c06_e&quot;         &quot;cv1c06_f&quot;         &quot;cv1c07&quot;          
-##  [16] &quot;cv1c08&quot;           &quot;cv1c09&quot;           &quot;cv1c10&quot;          
-##  [19] &quot;cv1c11&quot;           &quot;cv1c12&quot;           &quot;cv1c13&quot;          
-##  [22] &quot;ch01&quot;             &quot;ch02&quot;             &quot;ch03&quot;            
-##  [25] &quot;ch04&quot;             &quot;ch05&quot;             &quot;ch06&quot;            
-##  [28] &quot;ch07&quot;             &quot;ch08&quot;             &quot;ch09&quot;            
-##  [31] &quot;ch10&quot;             &quot;ch11&quot;             &quot;ch12&quot;            
-##  [34] &quot;ch13&quot;             &quot;ch14&quot;             &quot;ch15&quot;            
-##  [37] &quot;ch16&quot;             &quot;ch17_a&quot;           &quot;ch17_b&quot;          
-##  [40] &quot;ch18&quot;             &quot;ch19&quot;             &quot;ch20&quot;            
-##  [43] &quot;ch21&quot;             &quot;propauto&quot;         &quot;regten&quot;          
-##  [46] &quot;hacina&quot;           &quot;jniveled&quot;         &quot;jsexo&quot;           
-##  [49] &quot;jedad_agrup&quot;      &quot;jsitconyugal&quot;     &quot;jdif_lp&quot;         
-##  [52] &quot;jestado&quot;          &quot;jocupengh&quot;        &quot;jpercept&quot;        
-##  [55] &quot;jcomed&quot;           &quot;tipohog&quot;          &quot;cantping&quot;        
-##  [58] &quot;reldep&quot;           &quot;cantmiem&quot;         &quot;cantadequi&quot;      
-##  [61] &quot;menor18&quot;          &quot;menor14&quot;          &quot;mayor65&quot;         
-##  [64] &quot;dif_lph&quot;          &quot;cant_act&quot;         &quot;permieoc&quot;        
-##  [67] &quot;clima_educativo&quot;  &quot;gastot&quot;           &quot;gastotpc&quot;        
-##  [70] &quot;gasto_comunh&quot;     &quot;gascomp&quot;          &quot;gasvent&quot;         
-##  [73] &quot;gc_01&quot;            &quot;gc_02&quot;            &quot;gc_03&quot;           
-##  [76] &quot;gc_04&quot;            &quot;gc_05&quot;            &quot;gc_06&quot;           
-##  [79] &quot;gc_07&quot;            &quot;gc_08&quot;            &quot;gc_09&quot;           
-##  [82] &quot;gc_10&quot;            &quot;gc_11&quot;            &quot;gc_12&quot;           
-##  [85] &quot;gc09_01&quot;          &quot;gc09_02&quot;          &quot;gc09_03&quot;         
-##  [88] &quot;gc09_04&quot;          &quot;gc09_05&quot;          &quot;gc09_06&quot;         
-##  [91] &quot;gc09_07&quot;          &quot;gc09_08&quot;          &quot;gc09_09&quot;         
-##  [94] &quot;fp_contado&quot;       &quot;fp_credito&quot;       &quot;fp_especie&quot;      
-##  [97] &quot;fp_prodprop&quot;      &quot;fp_tarjetas&quot;      &quot;fp_otras&quot;        
-## [100] &quot;fp_indef&quot;         &quot;tn_hipsup&quot;        &quot;tn_autoserv&quot;     
-## [103] &quot;tn_negesp&quot;        &quot;tn_restaurant&quot;    &quot;tn_kiosco&quot;       
-## [106] &quot;tn_internet&quot;      &quot;tn_comedor&quot;       &quot;tn_especie&quot;      
-## [109] &quot;tn_otros&quot;         &quot;tn_indef&quot;         &quot;decgaphp&quot;        
-## [112] &quot;decgaphr&quot;         &quot;decgapht&quot;         &quot;quigaphp&quot;        
-## [115] &quot;quigaphr&quot;         &quot;quigapht&quot;         &quot;gasto_imputado&quot;  
-## [118] &quot;m_gasto_imputado&quot; &quot;ingtoth&quot;          &quot;ingpch&quot;          
-## [121] &quot;m_ingtoth&quot;        &quot;ingtoth_imp&quot;      &quot;qinth_p&quot;         
-## [124] &quot;qinth_r&quot;          &quot;qinth_t&quot;          &quot;dinth_p&quot;         
-## [127] &quot;dinth_r&quot;          &quot;dinth_t&quot;          &quot;qinpch_p&quot;        
-## [130] &quot;qinpch_r&quot;         &quot;qinpch_t&quot;         &quot;dinpch_p&quot;        
-## [133] &quot;dinpch_r&quot;         &quot;dinpch_t&quot;</code></pre>
-<pre class="r"><code>head(hogares, 10)</code></pre>
-<pre><code>##           id provincia region subregion trimestre anio pondera cv1c04 cv1c05_a
-## 1  478229345         2      1        1A         4 2018     276      4        2
-## 2  824935596         2      1        1A         4 2018     271      4        3
-## 3  549385244         2      1        1A         1 2017     264      4        2
-## 4   64338930         2      1        1A         3 2018     245      4        3
-## 5  635779227         2      1        1A         3 2018     283      4        3
-## 6     995013         2      1        1A         1 2018     549      4        1
-## 7  459317539         2      1        1A         1 2018     603      4        3
-## 8  712307269         2      1        1A         1 2018     722      4        3
-## 9  474783756         2      1        1A         2 2018     602      4        3
-## 10 489908161         2      1        1A         2 2018     891      4        3
-##    cv1c05_b cv1c05_c cv1c05_d cv1c06_e cv1c06_f cv1c07 cv1c08 cv1c09 cv1c10
-## 1         3        3        3        3        3      1      1      1      1
-## 2         3        3        3        3        3      1      1      1      1
-## 3         3        3        3        3        3      1      1      1      1
-## 4         3        3        3        3        3      1      1      1      1
-## 5         3        3        3        3        3      1      1      1      1
-## 6         1        3        3        3        3      1      1      1      1
-## 7         3        3        3        3        3      1      1      1      1
-## 8         3        3        3        3        3      1      1      1      1
-## 9         2        3        3        3        3      1      1      1      1
-## 10        3        3        3        3        3      1      1      1      1
-##    cv1c11 cv1c12 cv1c13 ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11
-## 1       1      4      2    1    2    2    1    4    1    1    1    1    1    1
-## 2       1      5      2    1    2    2    1    5    2    1    1    1    1    1
-## 3       1      1      2    3   NA   NA   NA    1    1    1    1    1    1    1
-## 4       1      1      2    3   NA   NA   NA    1    1    1    1    1    1    1
-## 5       1      1      3    3   NA   NA   NA    1    1    1    1    1    1    1
-## 6       1      3      3    4   NA   NA   NA    3    2    1    1    1    1    1
-## 7       1      6      3    1    2    2    1    6    1    1    1    1    1    1
-## 8       1      4      3    1    2    2    1    4    3    1    1    1    1    1
-## 9       1      4      3    1    2    2    1    4    1    1    1    1    1    1
-## 10      1      1      2    3   NA   NA   NA    1    1    1    1    1    1    1
-##    ch12 ch13 ch14 ch15 ch16 ch17_a ch17_b ch18 ch19 ch20 ch21 propauto regten
-## 1     1    3    1    1    1      1      1    2    1    7    1        2      1
-## 2     1    3    1    1    1      1      1    1    1    7    1        1      1
-## 3     1    1    1    1    1      2      1    1    1    1    1        1      2
-## 4     1    1    1    1    1      1      1    1    1    1    1        1      2
-## 5     1    1    1    5    1      2      1    2    1    1    1        1      2
-## 6     1    1    1    1    1      1      1    3    1    7    1        2      3
-## 7     1    2    1    1    1      1      1    1    1    7    1        2      1
-## 8     1    3    1    1    1      1      1    4    1    7    1        2      1
-## 9     1    2    1    1    1      1      1    1    1    7    1        1      1
-## 10    1    1    1    5    1      2      2   NA    1    5    1        1      2
-##       hacina jniveled jsexo jedad_agrup jsitconyugal jdif_lp jestado jocupengh
-## 1  0.5000000        4     1           6            2       2       3        NA
-## 2  0.4000000        6     2           6            4       2       3        NA
-## 3  1.0000000        5     1           2            5       2       3        NA
-## 4  1.0000000        5     1           5            3       2       3        NA
-## 5  2.0000000        5     1           2            1       2       1         1
-## 6  1.0000000        2     1           5            1       2       1         1
-## 7  0.1666667        6     2           6            4       1       1         3
-## 8  1.2500000        6     1           5            2       2       1         1
-## 9  0.2500000        6     2           6            5       1       3        NA
-## 10 1.0000000        6     2           3            5       2       1         1
-##    jpercept jcomed tipohog cantping reldep cantmiem cantadequi menor18 menor14
-## 1         1      1       2        2    1.0        2       1.37       0       0
-## 2         1      1       3        1    2.0        2       1.43       0       0
-## 3         1      2       1        1    1.0        1       1.02       0       0
-## 4         1      1       1        1    1.0        1       1.00       0       0
-## 5         1      2       2        2    1.0        2       1.78       0       0
-## 6         1      1       3        3    1.0        3       2.79       0       0
-## 7         1      1       1        1    1.0        1       0.67       0       0
-## 8         1      1       3        2    2.5        5       4.26       3       1
-## 9         1      1       1        1    1.0        1       0.63       0       0
-## 10        1      1       1        1    1.0        1       0.77       0       0
-##    mayor65 dif_lph cant_act permieoc clima_educativo     gastot  gastotpc
-## 1        2       0        0       NA               3  36754.070 18377.035
-## 2        1       0        1       NA               4  30000.700 15000.350
-## 3        0       0        0       NA               3   5816.077  5816.077
-## 4        0       0        0       NA               3  33049.610 33049.610
-## 5        0       0        2      2.0               3  34307.245 17153.623
-## 6        0       0        3      1.0               3  17778.075  5926.025
-## 7        1       1        1      1.0               5  79541.080 79541.080
-## 8        0       0        2      2.5               5 170018.520 34003.704
-## 9        1       1        0       NA               5  24025.570 24025.570
-## 10       0       0        1      1.0               5  27114.949 27114.949
-##    gasto_comunh    gascomp gasvent     gc_01    gc_02 gc_03    gc_04    gc_05
-## 1     26552.590  36754.070       0 4871.2500 1428.900     0  8680.00     0.00
-## 2     28407.260  30000.700       0 6984.2900    0.000     0  7933.00   448.00
-## 3      5085.173   5816.077       0  935.3233    0.000   500   522.45    50.00
-## 4     29996.960  33049.610       0 4334.3300  913.630   200 15000.00     0.00
-## 5     30676.540  34307.245       0 5897.4600    0.000  5450 12175.00  1909.80
-## 6      8674.250  17778.075       0 2983.3700    0.000     0     0.00  1519.41
-## 7     71010.980  79541.080       0 4570.9645 2790.685 17450  8100.00  3900.00
-## 8    163523.520 170018.520       0 1039.2000 4330.000  6000  6340.00 11000.00
-## 9     24025.570  24025.570       0 1359.6200  519.600     0  5136.50  8284.85
-## 10    23746.210  27114.949       0 2495.8120    0.000   240  7810.28   752.00
-##         gc_06     gc_07   gc_08    gc_09 gc_10   gc_11    gc_12   gc09_01
-## 1   4800.0000  2748.480 1725.00  1625.00     0 9893.00   982.44 15393.150
-## 2   9303.2000  1593.440 2690.00   750.00     0    0.00   298.77  6984.290
-## 3      0.0000  1411.304 1060.00   600.00     0  433.00   304.00  1368.323
-## 4      0.0000   368.050 1000.00  3948.50  5000 2035.10   250.00  7283.060
-## 5   2000.0000   771.005 1384.00   900.00     0 2814.50  1005.48  8711.960
-## 6      0.0000  7099.925  303.10  1280.00     0 3464.00  1128.27  6447.370
-## 7   2944.4000 20311.500 1275.00  1125.00     0 1818.60 15254.93  9180.249
-## 8  10000.0000  3928.000 5000.00 36720.00 58440 6495.00 20726.32 11864.200
-## 9   6984.0000     0.000  596.15  1144.85     0    0.00     0.00  1879.220
-## 10   340.9875  4060.830 4112.00  3061.50     0 2671.61  1569.93  5167.422
-##    gc09_02  gc09_03  gc09_04    gc09_05   gc09_06  gc09_07 gc09_08  gc09_09
-## 1        0  8680.00     0.00  4800.0000  5155.920  2425.00     0.0   300.00
-## 2        0  7933.00   448.00  9303.2000  4283.440   750.00     0.0   298.77
-## 3      500   522.45    50.00     0.0000  2471.304     0.00   600.0   304.00
-## 4      200 15000.00     0.00     0.0000  1368.050     0.00  8948.5   250.00
-## 5     5450 12175.00  1909.80  2000.0000  2155.005   900.00     0.0  1005.48
-## 6        0     0.00  1519.41     0.0000  7403.025  1280.00     0.0  1128.27
-## 7    17450 12100.00  3900.00  2944.4000 17586.500  1125.00     0.0 15254.93
-## 8     6000  9840.00 11000.00 10000.0000  7289.200 36720.00 58440.0 18865.12
-## 9        0  5136.50  8284.85  6984.0000   596.150  1144.85     0.0     0.00
-## 10     240  7810.28   752.00   340.9875  8172.830  2161.50   900.0  1569.93
-##    fp_contado fp_credito fp_especie fp_prodprop fp_tarjetas fp_otras   fp_indef
-## 1   35471.590    1040.00        0.0           0     242.480        0  23000.000
-## 2   26902.740    2760.22        0.0           0     337.740        0  36000.000
-## 3    3444.773    2160.00        0.0           0       0.000        0    211.304
-## 4   24758.120    7923.44        0.0           0     368.050        0  10000.000
-## 5   24999.740    5850.00     2814.5           0     643.005        0   7500.000
-## 6   10114.170    6657.18        0.0           0    1006.725        0  10920.000
-## 7   39359.040   36582.04        0.0           0       0.000        0  28600.000
-## 8   26389.200  129129.32     4500.0           0       0.000        0 185000.000
-## 9   15246.570     779.00        0.0           0       0.000        0  43148.000
-## 10  20007.320    5328.00     1558.8           0     220.830        0   5804.000
-##     tn_hipsup tn_autoserv tn_negesp tn_restaurant tn_kiosco tn_internet
-## 1    600.0000     3264.82 12315.770       6495.00   242.480           0
-## 2      0.0000     5802.20 11952.060          0.00   337.740           0
-## 3    985.3233        0.00  2348.000        433.00     0.000           0
-## 4    896.3100     2281.91  8503.340          0.00   368.050           0
-## 5  11309.5400      200.00  4944.000          0.00   816.205           0
-## 6      0.0000     3039.82  9138.030       3464.00  1006.725           0
-## 7   6201.2095        0.00 46098.070       1818.60   173.200           0
-## 8      0.0000        0.00 55843.520       6495.00     0.000           0
-## 9      0.0000     1727.67  8199.400          0.00     0.000           0
-## 10  2305.2920      194.85  6554.488       1199.41   394.030           0
-##    tn_comedor tn_especie tn_otros   tn_indef decgaphp decgaphr decgapht
-## 1           0        0.0    866.0  12970.000        7        9        9
-## 2           0        0.0   1255.7  10653.000        6        8        9
-## 3           0        0.0      0.0   2049.754        2        4        5
-## 4           0        0.0      0.0  21000.000        9       10       10
-## 5           0     2814.5      0.0  14223.000        6        9        9
-## 6           0        0.0    649.5    480.000        2        4        5
-## 7           0        0.0    800.0  24450.000       10       10       10
-## 8           0        0.0      0.0 107680.000        9       10       10
-## 9           0        0.0      0.0  14098.500        8        9       10
-## 10          0     1558.8   1125.8  13782.280        9       10       10
-##    quigaphp quigaphr quigapht gasto_imputado m_gasto_imputado    ingtoth
-## 1         4        5        5          0.000                2  35083.333
-## 2         3        4        5          0.000                2  42666.667
-## 3         1        2        3        692.184                1  15000.000
-## 4         5        5        5          0.000                2  65000.000
-## 5         3        5        5          0.000                2  30883.333
-## 6         1        2        3       7588.325                1  63666.667
-## 7         5        5        5          0.000                2  82666.667
-## 8         5        5        5          0.000                2 219833.333
-## 9         4        5        5          0.000                2   8233.333
-## 10        5        5        5          0.000                2  23166.667
-##       ingpch m_ingtoth ingtoth_imp qinth_p qinth_r qinth_t dinth_p dinth_r
-## 1  17541.667         0           0       3       4       4       5       7
-## 2  21333.333         0           0       4       4       4       7       8
-## 3  15000.000         0           0       1       2       2       2       3
-## 4  65000.000         0           0       5       5       5       9       9
-## 5  15441.667         0           0       3       3       4       5       6
-## 6  21222.222         0           0       4       5       5       8       9
-## 7  82666.667         0           0       5       5       5       9      10
-## 8  43966.667         0           0       5       5       5      10      10
-## 9   8233.333         0           0       1       1       1       1       1
-## 10 23166.667         0           0       2       3       3       3       5
-##    dinth_t qinpch_p qinpch_r qinpch_t dinpch_p dinpch_r dinpch_t
-## 1        7        3        4        4        6        8        8
-## 2        8        4        5        5        7        9        9
-## 3        3        3        4        4        5        7        8
-## 4       10        5        5        5       10       10       10
-## 5        7        3        4        4        5        8        8
-## 6       10        4        5        5        7        9        9
-## 7       10        5        5        5       10       10       10
-## 8       10        5        5        5       10       10       10
-## 9        1        1        3        3        2        5        5
-## 10       5        4        5        5        7        9        9</code></pre>
+# names(hogares)
+
+# head(hogares,10)</code></pre>
 <pre class="r"><code># un registro por persona: cada persona se identifica usando &#39;id&#39; y &#39;miembro&#39;
 personas &lt;- read.table(file = &quot;clase7/engho/engho2018_personas.txt&quot;, sep = &quot;|&quot;, dec = &quot;.&quot;,
     header = TRUE, fill = TRUE)
 
-names(personas)</code></pre>
-<pre><code>##   [1] &quot;id&quot;                &quot;provincia&quot;         &quot;miembro&quot;          
-##   [4] &quot;pondera&quot;           &quot;region&quot;            &quot;subregion&quot;        
-##   [7] &quot;anio&quot;              &quot;trimestre&quot;         &quot;cp03&quot;             
-##  [10] &quot;cp04&quot;              &quot;cp13&quot;              &quot;cp14_01&quot;          
-##  [13] &quot;np14_02&quot;           &quot;cp15_01&quot;           &quot;np15_02&quot;          
-##  [16] &quot;cp16&quot;              &quot;cp17&quot;              &quot;cp18&quot;             
-##  [19] &quot;sitconyugal&quot;       &quot;cp19&quot;              &quot;cp20&quot;             
-##  [22] &quot;cp21&quot;              &quot;cp22&quot;              &quot;niveled&quot;          
-##  [25] &quot;cp23_01&quot;           &quot;cp23_02&quot;           &quot;cp23_03&quot;          
-##  [28] &quot;cp23_04&quot;           &quot;cp23_05&quot;           &quot;cp23_06&quot;          
-##  [31] &quot;cp23_07&quot;           &quot;cp23_08&quot;           &quot;cp23_99&quot;          
-##  [34] &quot;dif_lp&quot;            &quot;dif_lpq&quot;           &quot;dif_lp_qtipo&quot;     
-##  [37] &quot;cp25&quot;              &quot;cp26&quot;              &quot;cp27&quot;             
-##  [40] &quot;cp28&quot;              &quot;cp29&quot;              &quot;cp30&quot;             
-##  [43] &quot;cp31&quot;              &quot;cp32&quot;              &quot;estado&quot;           
-##  [46] &quot;cp33&quot;              &quot;np34&quot;              &quot;np35&quot;             
-##  [49] &quot;cp36&quot;              &quot;cp37&quot;              &quot;cp38&quot;             
-##  [52] &quot;cp39&quot;              &quot;cp40&quot;              &quot;cp41&quot;             
-##  [55] &quot;cp42&quot;              &quot;cp43&quot;              &quot;cp44&quot;             
-##  [58] &quot;cat_ocup&quot;          &quot;cp45_01&quot;           &quot;rama_op&quot;          
-##  [61] &quot;rama_op_2&quot;         &quot;cp49&quot;              &quot;cp51&quot;             
-##  [64] &quot;cp52_01&quot;           &quot;cp53&quot;              &quot;np50&quot;             
-##  [67] &quot;catocup_s&quot;         &quot;rama_os&quot;           &quot;ccdgocpcn&quot;        
-##  [70] &quot;caracter_ocup&quot;     &quot;jer_ocup&quot;          &quot;califica&quot;         
-##  [73] &quot;cp54&quot;              &quot;cp55&quot;              &quot;cp56&quot;             
-##  [76] &quot;cp57&quot;              &quot;cp58&quot;              &quot;cp59&quot;             
-##  [79] &quot;cp60&quot;              &quot;cp61&quot;              &quot;cp62&quot;             
-##  [82] &quot;cp63&quot;              &quot;cp64&quot;              &quot;cp65&quot;             
-##  [85] &quot;cp66&quot;              &quot;cp67&quot;              &quot;cp68&quot;             
-##  [88] &quot;cp69&quot;              &quot;ct70&quot;              &quot;ct71&quot;             
-##  [91] &quot;ct72&quot;              &quot;ct73&quot;              &quot;ct74&quot;             
-##  [94] &quot;ct75&quot;              &quot;ct76&quot;              &quot;ct77&quot;             
-##  [97] &quot;comed&quot;             &quot;edad_agrup&quot;        &quot;adequi&quot;           
-## [100] &quot;viaja_hab&quot;         &quot;gastotc4&quot;          &quot;g131&quot;             
-## [103] &quot;g132&quot;              &quot;g611&quot;              &quot;g612&quot;             
-## [106] &quot;g623&quot;              &quot;g911&quot;              &quot;comed_pub&quot;        
-## [109] &quot;comefuera&quot;         &quot;pubnived&quot;          &quot;percept&quot;          
-## [112] &quot;cantftot&quot;          &quot;cantfimp&quot;          &quot;ingtotp&quot;          
-## [115] &quot;m_ingtotp&quot;         &quot;ingtotp_imp&quot;       &quot;inglabt&quot;          
-## [118] &quot;m_inglabt&quot;         &quot;inglabt_imp&quot;       &quot;ingocpal&quot;         
-## [121] &quot;m_ingocpal&quot;        &quot;ingocpal_imp&quot;      &quot;ingocsec&quot;         
-## [124] &quot;m_ingocsec&quot;        &quot;ingocsec_imp&quot;      &quot;ingocant&quot;         
-## [127] &quot;m_ingocant&quot;        &quot;ingocant_imp&quot;      &quot;ijubilacion&quot;      
-## [130] &quot;m_ijubilacion&quot;     &quot;ijubilacion_imp&quot;   &quot;ipensionesnc&quot;     
-## [133] &quot;m_ipensionesnc&quot;    &quot;ipensionesnc_imp&quot;  &quot;irentas&quot;          
-## [136] &quot;m_irentas&quot;         &quot;irentas_imp&quot;       &quot;iasignaciones&quot;    
-## [139] &quot;m_iasignaciones&quot;   &quot;iasignaciones_imp&quot; &quot;icuotaali&quot;        
-## [142] &quot;m_icuotaali&quot;       &quot;icuotaali_imp&quot;     &quot;iayfliar&quot;         
-## [145] &quot;m_iayfliar&quot;        &quot;iayfliar_imp&quot;      &quot;ibecaspub&quot;        
-## [148] &quot;m_ibecaspub&quot;       &quot;ibecaspub_imp&quot;     &quot;iotrosps&quot;         
-## [151] &quot;m_iotrosps&quot;        &quot;iotrosps_imp&quot;      &quot;itransfermon&quot;     
-## [154] &quot;m_itransfermon&quot;    &quot;itransfermon_imp&quot;  &quot;iautoconsumo&quot;     
-## [157] &quot;m_iautoconsumo&quot;    &quot;iautoconsumo_imp&quot;</code></pre>
-<pre class="r"><code>head(personas, 10)</code></pre>
-<pre><code>##           id provincia miembro pondera region subregion anio trimestre cp03
-## 1  478229345         2       1     276      1        1A 2018         4   83
-## 2  478229345         2       2     276      1        1A 2018         4   82
-## 3  824935596         2       1     271      1        1A 2018         4   75
-## 4  824935596         2       2     271      1        1A 2018         4   51
-## 5  549385244         2       1     264      1        1A 2017         1   19
-## 6   64338930         2       1     245      1        1A 2018         3   56
-## 7  635779227         2       1     283      1        1A 2018         3   23
-## 8  635779227         2       2     283      1        1A 2018         3   23
-## 9     995013         2       1     549      1        1A 2018         1   56
-## 10    995013         2       2     549      1        1A 2018         1   43
-##    cp04 cp13 cp14_01 np14_02 cp15_01 np15_02 cp16 cp17 cp18 sitconyugal cp19
-## 1     1    1       2      NA       2      NA    2    1    1           2    4
-## 2     2    2       2      NA       2      NA    2    1    1           2    4
-## 3     1    2       2      NA       2      NA    5    2   NA           4    4
-## 4     3    2       1       1       2      NA    1    2   NA           5    4
-## 5     1    1       2      NA       2      NA    1    2   NA           5    1
-## 6     1    1       2      NA       2      NA    2    2   NA           3    2
-## 7     1    1       2      NA       2      NA    1    1    2           1    1
-## 8     2    2       2      NA       2      NA    1    1    2           1    1
-## 9     1    1       2      NA       2      NA    4    1    2           1    4
-## 10    2    2       2      NA       2      NA    1    1    2           1    4
-##    cp20 cp21 cp22 niveled cp23_01 cp23_02 cp23_03 cp23_04 cp23_05 cp23_06
-## 1     6    1   NA       4       2       2       2       1       2       2
-## 2     9    2    2       5       2       2       2       1       2       2
-## 3     8    1   NA       6       1       2       2       1       2       2
-## 4     8    1   NA       6       2       2       2       1       2       2
-## 5     9    2    1       5       2       2       2       2       2       2
-## 6     9    2    1       5       2       1       2       2       2       2
-## 7     9    2    1       5       2       2       2       2       2       2
-## 8     9    2    1       5       2       2       2       1       2       2
-## 9     5    1   NA       2       2       1       2       2       2       2
-## 10    8    1   NA       6       2       1       2       2       2       2
-##    cp23_07 cp23_08 cp23_99 dif_lp dif_lpq dif_lp_qtipo cp25 cp26 cp27 cp28 cp29
-## 1        2       2      NA      2       0            0    2    2   NA   NA    1
-## 2        2       2      NA      2       0            0    2    2   NA   NA    1
-## 3        2       2      NA      2       0            0    2    2   NA   NA    1
-## 4        2       2      NA      2       0            0    2    2   NA   NA    1
-## 5        2       1      NA      2       0            0    2    2   NA   NA    1
-## 6        2       2      NA      2       0            0    2    2   NA   NA    1
-## 7        2       1      NA      2       0            0    2    1    1   NA   NA
-## 8        2       2      NA      2       0            0    2    2   NA   NA    3
-## 9        2       2      NA      2       0            0    2    1    1   NA   NA
-## 10       2       2      NA      2       0            0    2    1    1   NA   NA
-##    cp30 cp31 cp32 estado cp33 np34 np35 cp36 cp37 cp38 cp39 cp40 cp41 cp42 cp43
-## 1    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
-## 2    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
-## 3    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
-## 4    NA    1   NA      2   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
-## 5    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
-## 6    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
-## 7    NA   NA   NA      1    1   48   NA    2    4   NA    1   NA   NA   NA   NA
-## 8    NA    1   NA      2   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
-## 9    NA   NA   NA      1    1   55   NA    2    4   NA    1   NA   NA   NA   NA
-## 10   NA   NA   NA      1    1   48   NA    2    4   NA    1   NA   NA   NA   NA
-##    cp44 cat_ocup cp45_01 rama_op rama_op_2 cp49 cp51 cp52_01 cp53 np50
-## 1    NA       NA      NA                     NA   NA      NA   NA   NA
-## 2    NA       NA      NA                     NA   NA      NA   NA   NA
-## 3    NA       NA      NA                     NA   NA      NA   NA   NA
-## 4    NA       NA      NA                     NA   NA      NA   NA   NA
-## 5    NA       NA      NA                     NA   NA      NA   NA   NA
-## 6    NA       NA      NA                     NA   NA      NA   NA   NA
-## 7     1        3       1    5601         I    5   NA      NA   NA   NA
-## 8    NA       NA      NA                     NA   NA      NA   NA   NA
-## 9     1        3       1    9409         S    2   NA      NA   NA   NA
-## 10    1        3       1    8700         Q    3   NA      NA   NA   NA
-##    catocup_s rama_os ccdgocpcn caracter_ocup jer_ocup califica cp54 cp55 cp56
-## 1         NA                NA            NA       NA       NA    2    2    2
-## 2         NA                NA            NA       NA       NA    2    2    2
-## 3         NA                NA            NA       NA       NA    2    2    2
-## 4         NA                NA            NA       NA       NA    2    2    2
-## 5         NA                NA            NA       NA       NA    2    2    2
-## 6         NA                NA            NA       NA       NA    2    2    2
-## 7         NA             53314            53        3        4    1    2    2
-## 8         NA                NA            NA       NA       NA    2    2    2
-## 9         NA             56313            56        3        3    1    2    2
-## 10        NA             40313            40        3        3    1    2    2
-##    cp57 cp58 cp59 cp60 cp61 cp62 cp63 cp64 cp65 cp66 cp67 cp68 cp69 ct70 ct71
-## 1     1    2    2    2    2    2    2    2    2    2    2    2    2   88   88
-## 2     1    2    2    2    2    2    2    2    2    2    2    2    2    4   88
-## 3     1    2    2    1    2    2    2    2    2    2    2    2    2   88   88
-## 4     2    2    2    2    2    2    2    2    2    2    2    2    2    6   88
-## 5     2    2    2    2    2    2    2    2    2    2    1    2    2    8   88
-## 6     1    2    2    2    2    2    2    2    2    2    2    2    2    8   88
-## 7     2    2    2    2    2    2    2    2    2    2    2    2    2    5   88
-## 8     2    2    2    2    2    2    2    2    2    2    1    2    2    4   88
-## 9     2    2    2    2    2    2    2    2    2    2    2    2    2   88   88
-## 10    2    2    2    2    2    2    2    2    2    2    2    2    2    6   88
-##    ct72 ct73 ct74 ct75 ct76 ct77 comed edad_agrup adequi viaja_hab gastotc4
-## 1    88    2    2   NA    1    4     1          6   0.74         1 8660.000
-## 2    88   88    2   NA    1    4     1          6   0.63         1 1541.480
-## 3    88    2    2   NA    2    4     1          6   0.67         1 1255.700
-## 4    88   88    2   NA    2    4     1          5   0.76         1  337.740
-## 5    88   88    2   NA    1    4     2          2   1.02         1  730.904
-## 6    88   88    2   NA    1    4     1          5   1.00         1 3052.650
-## 7     5   88    1    2    2    4     2          2   1.02         1 3388.225
-## 8     2   88    2   NA    2    4     1          2   0.76         1  242.480
-## 9    88   88    2   NA    2    4     1          5   1.00         2 1515.500
-## 10   88   88    1    2    2    4     1          4   0.77         1 1177.760
-##      g131 g132   g611     g612  g623 g911 comed_pub comefuera pubnived percept
-## 1  6495.0    0    0.0  866.000   0.0    0         3         1        3       1
-## 2     0.0    0    0.0  242.480   0.0    0         3         1        3       1
-## 3     0.0    0    0.0 1255.700   0.0    0         3         2        4       1
-## 4     0.0    0    0.0  337.740   0.0    0         3         2        4       2
-## 5     0.0    0    0.0  211.304   0.0    0         1         1        3       1
-## 6     0.0    0    0.0  368.050   0.0    0         2         1        3       1
-## 7  2814.5    0    0.0  400.525   0.0    0         1         2        3       1
-## 8     0.0    0    0.0  242.480   0.0    0         3         2        3       1
-## 9     0.0    0 1515.5    0.000   0.0    0         2         2        2       1
-## 10    0.0    0    0.0  874.660 303.1    0         2         2        4       1
-##    cantftot cantfimp   ingtotp m_ingtotp ingtotp_imp  inglabt m_inglabt
-## 1         1        0 27000.000         0           0     0.00         2
-## 2         1        0  8083.333         0           0     0.00         2
-## 3         2        0 42666.667         0           0     0.00         2
-## 4        NA       NA        NA         2          NA       NA        NA
-## 5         1        0 15000.000         0           0     0.00         2
-## 6         1        0 65000.000         0           0     0.00         2
-## 7         1        0 26633.333         0           0 26633.33         0
-## 8         1        0  4250.000         0           0     0.00         2
-## 9         1        0 42000.000         0           0 42000.00         0
-## 10        1        0 15166.667         0           0 15166.67         0
-##    inglabt_imp ingocpal m_ingocpal ingocpal_imp ingocsec m_ingocsec
-## 1            0     0.00          2            0        0          2
-## 2            0     0.00          2            0        0          2
-## 3            0     0.00          2            0        0          2
-## 4           NA       NA         NA           NA       NA         NA
-## 5            0     0.00          2            0        0          2
-## 6            0     0.00          2            0        0          2
-## 7            0 26633.33          0            0        0          2
-## 8            0     0.00          2            0        0          2
-## 9            0 42000.00          0            0        0          2
-## 10           0 15166.67          0            0        0          2
-##    ingocsec_imp ingocant m_ingocant ingocant_imp ijubilacion m_ijubilacion
-## 1             0        0          2            0   27000.000             0
-## 2             0        0          2            0    8083.333             0
-## 3             0        0          2            0   26000.000             0
-## 4            NA       NA         NA           NA          NA            NA
-## 5             0        0          2            0       0.000             2
-## 6             0        0          2            0   65000.000             0
-## 7             0        0          2            0       0.000             2
-## 8             0        0          2            0       0.000             2
-## 9             0        0          2            0       0.000             2
-## 10            0        0          2            0       0.000             2
-##    ijubilacion_imp ipensionesnc m_ipensionesnc ipensionesnc_imp  irentas
-## 1                0            0              2                0     0.00
-## 2                0            0              2                0     0.00
-## 3                0            0              2                0 16666.67
-## 4               NA           NA             NA               NA       NA
-## 5                0            0              2                0     0.00
-## 6                0            0              2                0     0.00
-## 7                0            0              2                0     0.00
-## 8                0            0              2                0     0.00
-## 9                0            0              2                0     0.00
-## 10               0            0              2                0     0.00
-##    m_irentas irentas_imp iasignaciones m_iasignaciones iasignaciones_imp
-## 1          2           0             0               2                 0
-## 2          2           0             0               2                 0
-## 3          0           0             0               2                 0
-## 4         NA          NA            NA              NA                NA
-## 5          2           0             0               2                 0
-## 6          2           0             0               2                 0
-## 7          2           0             0               2                 0
-## 8          2           0             0               2                 0
-## 9          2           0             0               2                 0
-## 10         2           0             0               2                 0
-##    icuotaali m_icuotaali icuotaali_imp iayfliar m_iayfliar iayfliar_imp
-## 1          0           2             0        0          2            0
-## 2          0           2             0        0          2            0
-## 3          0           2             0        0          2            0
-## 4         NA          NA            NA       NA         NA           NA
-## 5          0           2             0    15000          0            0
-## 6          0           2             0        0          2            0
-## 7          0           2             0        0          2            0
-## 8          0           2             0     4250          0            0
-## 9          0           2             0        0          2            0
-## 10         0           2             0        0          2            0
-##    ibecaspub m_ibecaspub ibecaspub_imp iotrosps m_iotrosps iotrosps_imp
-## 1          0           2             0        0          2            0
-## 2          0           2             0        0          2            0
-## 3          0           2             0        0          2            0
-## 4         NA          NA            NA       NA         NA           NA
-## 5          0           2             0        0          2            0
-## 6          0           2             0        0          2            0
-## 7          0           2             0        0          2            0
-## 8          0           2             0        0          2            0
-## 9          0           2             0        0          2            0
-## 10         0           2             0        0          2            0
-##    itransfermon m_itransfermon itransfermon_imp iautoconsumo m_iautoconsumo
-## 1             0              2                0            0              2
-## 2             0              2                0            0              2
-## 3             0              2                0            0              2
-## 4            NA             NA               NA           NA             NA
-## 5             0              2                0            0              2
-## 6             0              2                0            0              2
-## 7             0              2                0            0              2
-## 8             0              2                0            0              2
-## 9             0              2                0            0              2
-## 10            0              2                0            0              2
-##    iautoconsumo_imp
-## 1                 0
-## 2                 0
-## 3                 0
-## 4                NA
-## 5                 0
-## 6                 0
-## 7                 0
-## 8                 0
-## 9                 0
-## 10                0</code></pre>
+# names(personas)
+
+# head(personas,10)</code></pre>
 <pre class="r"><code>base_integrada &lt;- gastos %&gt;%
     left_join(., hogares, by = &quot;id&quot;) %&gt;%
     left_join(., personas, by = c(&quot;id&quot;, &quot;miembro&quot;))
@@ -2134,110 +1615,7 @@ names(personas)</code></pre>
 # relevantes para nuestro análisis y hacer el join, generando una base más
 # chica con las variables que nos interesan para el análisis
 
-names(base_integrada)</code></pre>
-<pre><code>##   [1] &quot;id&quot;                &quot;provincia.x&quot;       &quot;miembro&quot;          
-##   [4] &quot;pondera.x&quot;         &quot;region.x&quot;          &quot;subregion.x&quot;      
-##   [7] &quot;articulo&quot;          &quot;subclase&quot;          &quot;clase&quot;            
-##  [10] &quot;grupo&quot;             &quot;division&quot;          &quot;r_imputado&quot;       
-##  [13] &quot;cantidad&quot;          &quot;unmed&quot;             &quot;monto&quot;            
-##  [16] &quot;forma_pago&quot;        &quot;tipo_negocio&quot;      &quot;modo_adq&quot;         
-##  [19] &quot;lugar_adq&quot;         &quot;provincia.y&quot;       &quot;region.y&quot;         
-##  [22] &quot;subregion.y&quot;       &quot;trimestre.x&quot;       &quot;anio.x&quot;           
-##  [25] &quot;pondera.y&quot;         &quot;cv1c04&quot;            &quot;cv1c05_a&quot;         
-##  [28] &quot;cv1c05_b&quot;          &quot;cv1c05_c&quot;          &quot;cv1c05_d&quot;         
-##  [31] &quot;cv1c06_e&quot;          &quot;cv1c06_f&quot;          &quot;cv1c07&quot;           
-##  [34] &quot;cv1c08&quot;            &quot;cv1c09&quot;            &quot;cv1c10&quot;           
-##  [37] &quot;cv1c11&quot;            &quot;cv1c12&quot;            &quot;cv1c13&quot;           
-##  [40] &quot;ch01&quot;              &quot;ch02&quot;              &quot;ch03&quot;             
-##  [43] &quot;ch04&quot;              &quot;ch05&quot;              &quot;ch06&quot;             
-##  [46] &quot;ch07&quot;              &quot;ch08&quot;              &quot;ch09&quot;             
-##  [49] &quot;ch10&quot;              &quot;ch11&quot;              &quot;ch12&quot;             
-##  [52] &quot;ch13&quot;              &quot;ch14&quot;              &quot;ch15&quot;             
-##  [55] &quot;ch16&quot;              &quot;ch17_a&quot;            &quot;ch17_b&quot;           
-##  [58] &quot;ch18&quot;              &quot;ch19&quot;              &quot;ch20&quot;             
-##  [61] &quot;ch21&quot;              &quot;propauto&quot;          &quot;regten&quot;           
-##  [64] &quot;hacina&quot;            &quot;jniveled&quot;          &quot;jsexo&quot;            
-##  [67] &quot;jedad_agrup&quot;       &quot;jsitconyugal&quot;      &quot;jdif_lp&quot;          
-##  [70] &quot;jestado&quot;           &quot;jocupengh&quot;         &quot;jpercept&quot;         
-##  [73] &quot;jcomed&quot;            &quot;tipohog&quot;           &quot;cantping&quot;         
-##  [76] &quot;reldep&quot;            &quot;cantmiem&quot;          &quot;cantadequi&quot;       
-##  [79] &quot;menor18&quot;           &quot;menor14&quot;           &quot;mayor65&quot;          
-##  [82] &quot;dif_lph&quot;           &quot;cant_act&quot;          &quot;permieoc&quot;         
-##  [85] &quot;clima_educativo&quot;   &quot;gastot&quot;            &quot;gastotpc&quot;         
-##  [88] &quot;gasto_comunh&quot;      &quot;gascomp&quot;           &quot;gasvent&quot;          
-##  [91] &quot;gc_01&quot;             &quot;gc_02&quot;             &quot;gc_03&quot;            
-##  [94] &quot;gc_04&quot;             &quot;gc_05&quot;             &quot;gc_06&quot;            
-##  [97] &quot;gc_07&quot;             &quot;gc_08&quot;             &quot;gc_09&quot;            
-## [100] &quot;gc_10&quot;             &quot;gc_11&quot;             &quot;gc_12&quot;            
-## [103] &quot;gc09_01&quot;           &quot;gc09_02&quot;           &quot;gc09_03&quot;          
-## [106] &quot;gc09_04&quot;           &quot;gc09_05&quot;           &quot;gc09_06&quot;          
-## [109] &quot;gc09_07&quot;           &quot;gc09_08&quot;           &quot;gc09_09&quot;          
-## [112] &quot;fp_contado&quot;        &quot;fp_credito&quot;        &quot;fp_especie&quot;       
-## [115] &quot;fp_prodprop&quot;       &quot;fp_tarjetas&quot;       &quot;fp_otras&quot;         
-## [118] &quot;fp_indef&quot;          &quot;tn_hipsup&quot;         &quot;tn_autoserv&quot;      
-## [121] &quot;tn_negesp&quot;         &quot;tn_restaurant&quot;     &quot;tn_kiosco&quot;        
-## [124] &quot;tn_internet&quot;       &quot;tn_comedor&quot;        &quot;tn_especie&quot;       
-## [127] &quot;tn_otros&quot;          &quot;tn_indef&quot;          &quot;decgaphp&quot;         
-## [130] &quot;decgaphr&quot;          &quot;decgapht&quot;          &quot;quigaphp&quot;         
-## [133] &quot;quigaphr&quot;          &quot;quigapht&quot;          &quot;gasto_imputado&quot;   
-## [136] &quot;m_gasto_imputado&quot;  &quot;ingtoth&quot;           &quot;ingpch&quot;           
-## [139] &quot;m_ingtoth&quot;         &quot;ingtoth_imp&quot;       &quot;qinth_p&quot;          
-## [142] &quot;qinth_r&quot;           &quot;qinth_t&quot;           &quot;dinth_p&quot;          
-## [145] &quot;dinth_r&quot;           &quot;dinth_t&quot;           &quot;qinpch_p&quot;         
-## [148] &quot;qinpch_r&quot;          &quot;qinpch_t&quot;          &quot;dinpch_p&quot;         
-## [151] &quot;dinpch_r&quot;          &quot;dinpch_t&quot;          &quot;provincia&quot;        
-## [154] &quot;pondera&quot;           &quot;region&quot;            &quot;subregion&quot;        
-## [157] &quot;anio.y&quot;            &quot;trimestre.y&quot;       &quot;cp03&quot;             
-## [160] &quot;cp04&quot;              &quot;cp13&quot;              &quot;cp14_01&quot;          
-## [163] &quot;np14_02&quot;           &quot;cp15_01&quot;           &quot;np15_02&quot;          
-## [166] &quot;cp16&quot;              &quot;cp17&quot;              &quot;cp18&quot;             
-## [169] &quot;sitconyugal&quot;       &quot;cp19&quot;              &quot;cp20&quot;             
-## [172] &quot;cp21&quot;              &quot;cp22&quot;              &quot;niveled&quot;          
-## [175] &quot;cp23_01&quot;           &quot;cp23_02&quot;           &quot;cp23_03&quot;          
-## [178] &quot;cp23_04&quot;           &quot;cp23_05&quot;           &quot;cp23_06&quot;          
-## [181] &quot;cp23_07&quot;           &quot;cp23_08&quot;           &quot;cp23_99&quot;          
-## [184] &quot;dif_lp&quot;            &quot;dif_lpq&quot;           &quot;dif_lp_qtipo&quot;     
-## [187] &quot;cp25&quot;              &quot;cp26&quot;              &quot;cp27&quot;             
-## [190] &quot;cp28&quot;              &quot;cp29&quot;              &quot;cp30&quot;             
-## [193] &quot;cp31&quot;              &quot;cp32&quot;              &quot;estado&quot;           
-## [196] &quot;cp33&quot;              &quot;np34&quot;              &quot;np35&quot;             
-## [199] &quot;cp36&quot;              &quot;cp37&quot;              &quot;cp38&quot;             
-## [202] &quot;cp39&quot;              &quot;cp40&quot;              &quot;cp41&quot;             
-## [205] &quot;cp42&quot;              &quot;cp43&quot;              &quot;cp44&quot;             
-## [208] &quot;cat_ocup&quot;          &quot;cp45_01&quot;           &quot;rama_op&quot;          
-## [211] &quot;rama_op_2&quot;         &quot;cp49&quot;              &quot;cp51&quot;             
-## [214] &quot;cp52_01&quot;           &quot;cp53&quot;              &quot;np50&quot;             
-## [217] &quot;catocup_s&quot;         &quot;rama_os&quot;           &quot;ccdgocpcn&quot;        
-## [220] &quot;caracter_ocup&quot;     &quot;jer_ocup&quot;          &quot;califica&quot;         
-## [223] &quot;cp54&quot;              &quot;cp55&quot;              &quot;cp56&quot;             
-## [226] &quot;cp57&quot;              &quot;cp58&quot;              &quot;cp59&quot;             
-## [229] &quot;cp60&quot;              &quot;cp61&quot;              &quot;cp62&quot;             
-## [232] &quot;cp63&quot;              &quot;cp64&quot;              &quot;cp65&quot;             
-## [235] &quot;cp66&quot;              &quot;cp67&quot;              &quot;cp68&quot;             
-## [238] &quot;cp69&quot;              &quot;ct70&quot;              &quot;ct71&quot;             
-## [241] &quot;ct72&quot;              &quot;ct73&quot;              &quot;ct74&quot;             
-## [244] &quot;ct75&quot;              &quot;ct76&quot;              &quot;ct77&quot;             
-## [247] &quot;comed&quot;             &quot;edad_agrup&quot;        &quot;adequi&quot;           
-## [250] &quot;viaja_hab&quot;         &quot;gastotc4&quot;          &quot;g131&quot;             
-## [253] &quot;g132&quot;              &quot;g611&quot;              &quot;g612&quot;             
-## [256] &quot;g623&quot;              &quot;g911&quot;              &quot;comed_pub&quot;        
-## [259] &quot;comefuera&quot;         &quot;pubnived&quot;          &quot;percept&quot;          
-## [262] &quot;cantftot&quot;          &quot;cantfimp&quot;          &quot;ingtotp&quot;          
-## [265] &quot;m_ingtotp&quot;         &quot;ingtotp_imp&quot;       &quot;inglabt&quot;          
-## [268] &quot;m_inglabt&quot;         &quot;inglabt_imp&quot;       &quot;ingocpal&quot;         
-## [271] &quot;m_ingocpal&quot;        &quot;ingocpal_imp&quot;      &quot;ingocsec&quot;         
-## [274] &quot;m_ingocsec&quot;        &quot;ingocsec_imp&quot;      &quot;ingocant&quot;         
-## [277] &quot;m_ingocant&quot;        &quot;ingocant_imp&quot;      &quot;ijubilacion&quot;      
-## [280] &quot;m_ijubilacion&quot;     &quot;ijubilacion_imp&quot;   &quot;ipensionesnc&quot;     
-## [283] &quot;m_ipensionesnc&quot;    &quot;ipensionesnc_imp&quot;  &quot;irentas&quot;          
-## [286] &quot;m_irentas&quot;         &quot;irentas_imp&quot;       &quot;iasignaciones&quot;    
-## [289] &quot;m_iasignaciones&quot;   &quot;iasignaciones_imp&quot; &quot;icuotaali&quot;        
-## [292] &quot;m_icuotaali&quot;       &quot;icuotaali_imp&quot;     &quot;iayfliar&quot;         
-## [295] &quot;m_iayfliar&quot;        &quot;iayfliar_imp&quot;      &quot;ibecaspub&quot;        
-## [298] &quot;m_ibecaspub&quot;       &quot;ibecaspub_imp&quot;     &quot;iotrosps&quot;         
-## [301] &quot;m_iotrosps&quot;        &quot;iotrosps_imp&quot;      &quot;itransfermon&quot;     
-## [304] &quot;m_itransfermon&quot;    &quot;itransfermon_imp&quot;  &quot;iautoconsumo&quot;     
-## [307] &quot;m_iautoconsumo&quot;    &quot;iautoconsumo_imp&quot;</code></pre>
+# names(base_integrada)</code></pre>
 </div>
 <div id="ejemplo-de-procesamiento" class="section level2">
 <h2>Ejemplo de procesamiento</h2>
@@ -2246,9 +1624,12 @@ names(base_integrada)</code></pre>
 como siempre en una encuesta, aplico el ponderador (pondera) para
 obtener estadísticas descriptivas que representen a la población
 total.</p>
-<pre class="r"><code>base_integrada %&gt;% 
+<pre class="r"><code>gasto_deciles &lt;- base_integrada %&gt;% 
    group_by(dinth_t) %&gt;% #decil de ingreso total del hogar
-    summarise(gasto_gestion_menstrual = weighted.mean(monto[articulo == &#39;A1213108&#39;], pondera.x[articulo == &#39;A1213108&#39;],na.rm=T)) </code></pre>
+    summarise(gasto_gestion_menstrual = weighted.mean(monto[articulo == &#39;A1213108&#39;], pondera.x[articulo == &#39;A1213108&#39;],na.rm=T)) 
+
+
+gasto_deciles</code></pre>
 <pre><code>## # A tibble: 10 x 2
 ##    dinth_t gasto_gestion_menstrual
 ##      &lt;int&gt;                   &lt;dbl&gt;
@@ -2268,6 +1649,96 @@ podemos interpretar esto? Se trata de un gasto que se ajusta en los
 hogares con mayores carencias económicas (a pesar de que las personas
 que menstrúan necesitan estos productos independientemente de su
 situación socioeconómica).</p>
+<p>¿Y si refinamos el análisis para estudiar el gasto dividido por la
+cantidad de miembros mujeres?</p>
+<p>Creamos la variables a partir de la base personas:</p>
+<pre class="r"><code>variable_cantidad_mujeres &lt;- personas %&gt;%
+    mutate(sexo = case_when(cp13 == 1 ~ &quot;Varones&quot;, cp13 == 2 ~ &quot;Mujeres&quot;)) %&gt;%
+    group_by(id, sexo) %&gt;%
+    summarise(miembros_sexo = n()) %&gt;%
+    ungroup() %&gt;%
+    filter(sexo == &quot;Mujeres&quot;) %&gt;%
+    select(id, cantidad_mujeres = miembros_sexo) %&gt;%
+    unique()
+
+head(variable_cantidad_mujeres, 10)</code></pre>
+<pre><code>## # A tibble: 10 x 2
+##        id cantidad_mujeres
+##     &lt;int&gt;            &lt;int&gt;
+##  1   8558                2
+##  2  60568                1
+##  3 146001                1
+##  4 271514                1
+##  5 290257                2
+##  6 347750                3
+##  7 360929                1
+##  8 375875                1
+##  9 486282                3
+## 10 522357                3</code></pre>
+<p>La incorporamos a nuestra base de datos:</p>
+<pre class="r"><code>base_integrada &lt;- base_integrada %&gt;%
+    left_join(., variable_cantidad_mujeres, by = &quot;id&quot;)</code></pre>
+<p>Recalculamos</p>
+<pre class="r"><code>gasto_deciles_pc &lt;- base_integrada %&gt;% 
+   group_by(dinth_t) %&gt;% #decil de ingreso total del hogar
+    summarise(gasto_gestion_menstrual_pc = weighted.mean((monto[articulo == &#39;A1213108&#39;]/cantidad_mujeres[articulo == &#39;A1213108&#39;]), pondera.x[articulo == &#39;A1213108&#39;],na.rm=T)) 
+
+gasto_deciles_pc</code></pre>
+<pre><code>## # A tibble: 10 x 2
+##    dinth_t gasto_gestion_menstrual_pc
+##      &lt;int&gt;                      &lt;dbl&gt;
+##  1       1                       126.
+##  2       2                       110.
+##  3       3                       142.
+##  4       4                       115.
+##  5       5                       176.
+##  6       6                       166.
+##  7       7                       199.
+##  8       8                       180.
+##  9       9                       196.
+## 10      10                       268.</code></pre>
+<p>¿Cómo se modificaron nuestros resultados? Vamos a visualizar</p>
+<pre class="r"><code>tabla_resultados &lt;- gasto_deciles %&gt;%
+    left_join(., gasto_deciles_pc, by = &quot;dinth_t&quot;) %&gt;%
+    pivot_longer(!dinth_t, names_to = &quot;indicador&quot;, values_to = &quot;valor&quot;)
+
+tabla_resultados$indicador[tabla_resultados$indicador == &quot;gasto_gestion_menstrual&quot;] &lt;- &quot;Total&quot;
+tabla_resultados$indicador[tabla_resultados$indicador == &quot;gasto_gestion_menstrual_pc&quot;] &lt;- &quot;Por miembro de sexo femenino&quot;
+
+tabla_resultados</code></pre>
+<pre><code>## # A tibble: 20 x 3
+##    dinth_t indicador                    valor
+##      &lt;int&gt; &lt;chr&gt;                        &lt;dbl&gt;
+##  1       1 Total                         169.
+##  2       1 Por miembro de sexo femenino  126.
+##  3       2 Total                         187.
+##  4       2 Por miembro de sexo femenino  110.
+##  5       3 Total                         197.
+##  6       3 Por miembro de sexo femenino  142.
+##  7       4 Total                         177.
+##  8       4 Por miembro de sexo femenino  115.
+##  9       5 Total                         294.
+## 10       5 Por miembro de sexo femenino  176.
+## 11       6 Total                         265.
+## 12       6 Por miembro de sexo femenino  166.
+## 13       7 Total                         312.
+## 14       7 Por miembro de sexo femenino  199.
+## 15       8 Total                         340.
+## 16       8 Por miembro de sexo femenino  180.
+## 17       9 Total                         336.
+## 18       9 Por miembro de sexo femenino  196.
+## 19      10 Total                         422.
+## 20      10 Por miembro de sexo femenino  268.</code></pre>
+<pre class="r"><code>library(wesanderson)
+
+ggplot(tabla_resultados, aes(y = valor, x = factor(dinth_t), fill = dinth_t)) + geom_col(alpha = 0.9) +
+    theme_minimal() + labs(title = &quot;Gasto en productos de gestión menstrual por decil de ingreso total del hogar&quot;,
+    x = &quot;Decil de ingreso total del hogar&quot;, y = &quot;Gasto en productos de gestion menstrual&quot;,
+    caption = &quot;Elaboración propia en base a ENGHo 17/18&quot;) + facet_wrap(~indicador,
+    scales = &quot;free&quot;) + scale_y_continuous(labels = function(x) paste0(&quot;$&quot;, x)) +
+    scale_fill_gradientn(colours = wes_palette(&quot;Zissou1&quot;, 100, type = &quot;continuous&quot;)) +
+    guides(fill = &quot;none&quot;)</code></pre>
+<p><img src="data:image/png;base64,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" width="672" /></p>
 </div>
 </div>
 
