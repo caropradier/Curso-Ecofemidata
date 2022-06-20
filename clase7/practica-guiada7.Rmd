@@ -36,3 +36,93 @@ En particular, les traemos algunas **bases de datos** que pueden resultarles út
 
 
 # ENGHo
+
+El INDEC realizó la Encuesta Nacional de Gastos de los Hogares 2017-2018 (ENGHo 2017-2018) con el objetivo principal de obtener información acerca de los gastos y los ingresos de los hogares y sus características sociodemográficas. La encuesta, llevada a cabo entre noviembre de 2017 y noviembre de 2018, permite caracterizar las condiciones de vida de los hogares, fundamentalmente en términos de su acceso a los bienes y servicios, y de los ingresos –monetarios o en especie–.
+
+## Artículos
+
+La base de artículos contiene la descripción de los productos y las divisiones, los grupos, las clases y las subclases que los contienen (en la base de gastos aparece el código, no la descripción).
+
+```{r}
+articulos <- read.table(file ="clase7/engho/engho2018_articulos.txt",sep="|", dec=".", header = TRUE, fill = TRUE,fileEncoding = "UTF-8")
+
+#por ejemplo, para ver los articulos que están relacionados a Salud
+
+articulos %>% 
+  filter(division_desc == 'SALUD') %>% select(articulo_desc,grupo_desc,clase_desc,subclase_desc,division_desc) %>% 
+  head(.,10)
+```
+
+## Personas, hogares y gastos
+
+Las bases se conectan entre si la variable id (identifica hogar) y miembro (identifica a personas dentro de un hogar), por lo tanto, se unen las bases de personas, hogares y gastos usando estas variables. 
+
+¿Qué información contiene cada columna? Ver diseño de registro!
+
+
+```{r}
+#un registro por cada artículo adquirido por el hogar y sus miembros
+gastos <- read.table(file ="clase7/engho/engho2018_gastos.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+
+names(gastos)
+
+head(gastos,10)
+
+```
+```{r}
+#un registro por hogar: cada hogar se identifica usando "id"
+hogares <- read.table(file ="clase7/engho/engho2018_hogares.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+
+names(hogares)
+
+head(hogares,10) 
+
+```
+
+
+```{r}
+#un registro por persona: cada persona se identifica usando "id" y "miembro"
+personas <- read.table(file ="clase7/engho/engho2018_personas.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+
+names(personas)
+
+head(personas,10)
+
+```
+
+```{r}
+base_integrada <- gastos %>% 
+  left_join(.,hogares, by = "id") %>% 
+  left_join(.,personas, by = c("id","miembro"))
+
+
+#ojo! hay variables duplicadas en las bases: ver aquellas que quedan con nombres .x, .y
+#para que no nos pase, seleccionar sólo las variables relevantes para nuestro análisis y hacer el join, generando una base más chica con las variables que nos interesan para el análisis
+
+names(base_integrada)
+
+```
+
+
+
+## Ejemplo de procesamiento
+
+¿Quién gasta más en productos de gestión menstrual?
+
+
+Recurro al código de artículo de cada uno de estos productos.
+Además, como siempre en una encuesta, aplico el ponderador (pondera) para obtener estadísticas descriptivas que representen a la población total.
+
+
+```{r}
+
+base_integrada %>% 
+   group_by(dinth_t) %>% #decil de ingreso total del hogar
+    summarise(gasto_gestion_menstrual = weighted.mean(monto[articulo == 'A1213108'], pondera.x[articulo == 'A1213108'],na.rm=T)) 
+
+
+```
+
+
+Podemos observar a partir de este procesamiento que el gasto en productos de gestión menstrual crece con los ingresos del hogar ¿Cómo podemos interpretar esto? Se trata de un gasto que se ajusta en los hogares con mayores carencias económicas (a pesar de que las personas que menstrúan necesitan estos productos independientemente de su situación socioeconómica).
+

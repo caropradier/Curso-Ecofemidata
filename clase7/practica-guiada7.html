@@ -1512,7 +1512,7 @@ div.tocify {
 <h1 class="title toc-ignore">Clase 7 - Workshop del proyecto
 integrador</h1>
 <h4 class="author">Carolina Pradier y Laia Domenech Burin</h4>
-<h4 class="date">16 junio, 2022</h4>
+<h4 class="date">20 junio, 2022</h4>
 
 </div>
 
@@ -1535,6 +1535,740 @@ las problemáticas de género.</p>
 </div>
 <div id="engho" class="section level1">
 <h1>ENGHo</h1>
+<p>El INDEC realizó la Encuesta Nacional de Gastos de los Hogares
+2017-2018 (ENGHo 2017-2018) con el objetivo principal de obtener
+información acerca de los gastos y los ingresos de los hogares y sus
+características sociodemográficas. La encuesta, llevada a cabo entre
+noviembre de 2017 y noviembre de 2018, permite caracterizar las
+condiciones de vida de los hogares, fundamentalmente en términos de su
+acceso a los bienes y servicios, y de los ingresos –monetarios o en
+especie–.</p>
+<div id="artículos" class="section level2">
+<h2>Artículos</h2>
+<p>La base de artículos contiene la descripción de los productos y las
+divisiones, los grupos, las clases y las subclases que los contienen (en
+la base de gastos aparece el código, no la descripción).</p>
+<pre class="r"><code>articulos &lt;- read.table(file = &quot;clase7/engho/engho2018_articulos.txt&quot;, sep = &quot;|&quot;,
+    dec = &quot;.&quot;, header = TRUE, fill = TRUE, fileEncoding = &quot;UTF-8&quot;)
+
+# por ejemplo, para ver los articulos que están relacionados a Salud
+
+articulos %&gt;%
+    filter(division_desc == &quot;SALUD&quot;) %&gt;%
+    select(articulo_desc, grupo_desc, clase_desc, subclase_desc, division_desc) %&gt;%
+    head(., 10)</code></pre>
+<pre><code>##                  articulo_desc                              grupo_desc
+## 1                      Alergia PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 2  Antibióticos y antisépticos PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 3              Anticonceptivos PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 4            Antiinflamatorios PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 5                    Cardíacos PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 6               Dermatológicos PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 7                     Diabetes PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 8                      Diarrea PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 9                   Digestivos PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+## 10              Fiebre o dolor PRODUCTOS, ARTEFACTOS Y EQUIPOS MÉDICOS
+##                 clase_desc           subclase_desc division_desc
+## 1  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 2  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 3  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 4  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 5  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 6  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 7  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 8  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 9  Productos farmacéuticos Productos farmacéuticos         SALUD
+## 10 Productos farmacéuticos Productos farmacéuticos         SALUD</code></pre>
+</div>
+<div id="personas-hogares-y-gastos" class="section level2">
+<h2>Personas, hogares y gastos</h2>
+<p>Las bases se conectan entre si la variable id (identifica hogar) y
+miembro (identifica a personas dentro de un hogar), por lo tanto, se
+unen las bases de personas, hogares y gastos usando estas variables.</p>
+<p>¿Qué información contiene cada columna? Ver diseño de registro!</p>
+<pre class="r"><code># un registro por cada artículo adquirido por el hogar y sus miembros
+gastos &lt;- read.table(file = &quot;clase7/engho/engho2018_gastos.txt&quot;, sep = &quot;|&quot;, dec = &quot;.&quot;,
+    header = TRUE, fill = TRUE)
+
+names(gastos)</code></pre>
+<pre><code>##  [1] &quot;id&quot;           &quot;provincia&quot;    &quot;miembro&quot;      &quot;pondera&quot;      &quot;region&quot;      
+##  [6] &quot;subregion&quot;    &quot;articulo&quot;     &quot;subclase&quot;     &quot;clase&quot;        &quot;grupo&quot;       
+## [11] &quot;division&quot;     &quot;r_imputado&quot;   &quot;cantidad&quot;     &quot;unmed&quot;        &quot;monto&quot;       
+## [16] &quot;forma_pago&quot;   &quot;tipo_negocio&quot; &quot;modo_adq&quot;     &quot;lugar_adq&quot;</code></pre>
+<pre class="r"><code>head(gastos, 10)</code></pre>
+<pre><code>##      id provincia miembro pondera region subregion articulo subclase clase
+## 1  8558        14       0     749      2        2A A0111105   A01111 A0111
+## 2  8558        14       0     749      2        2A A0111111   A01111 A0111
+## 3  8558        14       0     749      2        2A A0111111   A01111 A0111
+## 4  8558        14       0     749      2        2A A0111114   A01111 A0111
+## 5  8558        14       0     749      2        2A A0111201   A01112 A0111
+## 6  8558        14       0     749      2        2A A0111304   A01113 A0111
+## 7  8558        14       0     749      2        2A A0112201   A01122 A0112
+## 8  8558        14       0     749      2        2A A0112202   A01122 A0112
+## 9  8558        14       0     749      2        2A A0114401   A01144 A0114
+## 10 8558        14       0     749      2        2A A0115102   A01151 A0115
+##    grupo division r_imputado cantidad unmed  monto forma_pago tipo_negocio
+## 1   A011      A01          2    1.732     K 186.19          1            3
+## 2   A011      A01          2    4.330     K 173.20          1            2
+## 3   A011      A01          2   10.825     K 433.00          1            3
+## 4   A011      A01          2    2.165     K 151.55          1            3
+## 5   A011      A01          2    2.165     K  73.61          1            3
+## 6   A011      A01          2    2.165     K 108.25          1            3
+## 7   A011      A01          2    8.660     K 519.60          1            2
+## 8   A011      A01          2    3.031     K 394.03          1            3
+## 9   A011      A01          2   25.980     U 103.92          1            3
+## 10  A011      A01          2    3.897     L 216.50          1            3
+##    modo_adq lugar_adq
+## 1         1         2
+## 2         1         2
+## 3         1         2
+## 4         1         2
+## 5         1         2
+## 6         1         2
+## 7         1         2
+## 8         1         2
+## 9         1         2
+## 10        1         2</code></pre>
+<pre class="r"><code># un registro por hogar: cada hogar se identifica usando &#39;id&#39;
+hogares &lt;- read.table(file = &quot;clase7/engho/engho2018_hogares.txt&quot;, sep = &quot;|&quot;, dec = &quot;.&quot;,
+    header = TRUE, fill = TRUE)
+
+names(hogares)</code></pre>
+<pre><code>##   [1] &quot;id&quot;               &quot;provincia&quot;        &quot;region&quot;          
+##   [4] &quot;subregion&quot;        &quot;trimestre&quot;        &quot;anio&quot;            
+##   [7] &quot;pondera&quot;          &quot;cv1c04&quot;           &quot;cv1c05_a&quot;        
+##  [10] &quot;cv1c05_b&quot;         &quot;cv1c05_c&quot;         &quot;cv1c05_d&quot;        
+##  [13] &quot;cv1c06_e&quot;         &quot;cv1c06_f&quot;         &quot;cv1c07&quot;          
+##  [16] &quot;cv1c08&quot;           &quot;cv1c09&quot;           &quot;cv1c10&quot;          
+##  [19] &quot;cv1c11&quot;           &quot;cv1c12&quot;           &quot;cv1c13&quot;          
+##  [22] &quot;ch01&quot;             &quot;ch02&quot;             &quot;ch03&quot;            
+##  [25] &quot;ch04&quot;             &quot;ch05&quot;             &quot;ch06&quot;            
+##  [28] &quot;ch07&quot;             &quot;ch08&quot;             &quot;ch09&quot;            
+##  [31] &quot;ch10&quot;             &quot;ch11&quot;             &quot;ch12&quot;            
+##  [34] &quot;ch13&quot;             &quot;ch14&quot;             &quot;ch15&quot;            
+##  [37] &quot;ch16&quot;             &quot;ch17_a&quot;           &quot;ch17_b&quot;          
+##  [40] &quot;ch18&quot;             &quot;ch19&quot;             &quot;ch20&quot;            
+##  [43] &quot;ch21&quot;             &quot;propauto&quot;         &quot;regten&quot;          
+##  [46] &quot;hacina&quot;           &quot;jniveled&quot;         &quot;jsexo&quot;           
+##  [49] &quot;jedad_agrup&quot;      &quot;jsitconyugal&quot;     &quot;jdif_lp&quot;         
+##  [52] &quot;jestado&quot;          &quot;jocupengh&quot;        &quot;jpercept&quot;        
+##  [55] &quot;jcomed&quot;           &quot;tipohog&quot;          &quot;cantping&quot;        
+##  [58] &quot;reldep&quot;           &quot;cantmiem&quot;         &quot;cantadequi&quot;      
+##  [61] &quot;menor18&quot;          &quot;menor14&quot;          &quot;mayor65&quot;         
+##  [64] &quot;dif_lph&quot;          &quot;cant_act&quot;         &quot;permieoc&quot;        
+##  [67] &quot;clima_educativo&quot;  &quot;gastot&quot;           &quot;gastotpc&quot;        
+##  [70] &quot;gasto_comunh&quot;     &quot;gascomp&quot;          &quot;gasvent&quot;         
+##  [73] &quot;gc_01&quot;            &quot;gc_02&quot;            &quot;gc_03&quot;           
+##  [76] &quot;gc_04&quot;            &quot;gc_05&quot;            &quot;gc_06&quot;           
+##  [79] &quot;gc_07&quot;            &quot;gc_08&quot;            &quot;gc_09&quot;           
+##  [82] &quot;gc_10&quot;            &quot;gc_11&quot;            &quot;gc_12&quot;           
+##  [85] &quot;gc09_01&quot;          &quot;gc09_02&quot;          &quot;gc09_03&quot;         
+##  [88] &quot;gc09_04&quot;          &quot;gc09_05&quot;          &quot;gc09_06&quot;         
+##  [91] &quot;gc09_07&quot;          &quot;gc09_08&quot;          &quot;gc09_09&quot;         
+##  [94] &quot;fp_contado&quot;       &quot;fp_credito&quot;       &quot;fp_especie&quot;      
+##  [97] &quot;fp_prodprop&quot;      &quot;fp_tarjetas&quot;      &quot;fp_otras&quot;        
+## [100] &quot;fp_indef&quot;         &quot;tn_hipsup&quot;        &quot;tn_autoserv&quot;     
+## [103] &quot;tn_negesp&quot;        &quot;tn_restaurant&quot;    &quot;tn_kiosco&quot;       
+## [106] &quot;tn_internet&quot;      &quot;tn_comedor&quot;       &quot;tn_especie&quot;      
+## [109] &quot;tn_otros&quot;         &quot;tn_indef&quot;         &quot;decgaphp&quot;        
+## [112] &quot;decgaphr&quot;         &quot;decgapht&quot;         &quot;quigaphp&quot;        
+## [115] &quot;quigaphr&quot;         &quot;quigapht&quot;         &quot;gasto_imputado&quot;  
+## [118] &quot;m_gasto_imputado&quot; &quot;ingtoth&quot;          &quot;ingpch&quot;          
+## [121] &quot;m_ingtoth&quot;        &quot;ingtoth_imp&quot;      &quot;qinth_p&quot;         
+## [124] &quot;qinth_r&quot;          &quot;qinth_t&quot;          &quot;dinth_p&quot;         
+## [127] &quot;dinth_r&quot;          &quot;dinth_t&quot;          &quot;qinpch_p&quot;        
+## [130] &quot;qinpch_r&quot;         &quot;qinpch_t&quot;         &quot;dinpch_p&quot;        
+## [133] &quot;dinpch_r&quot;         &quot;dinpch_t&quot;</code></pre>
+<pre class="r"><code>head(hogares, 10)</code></pre>
+<pre><code>##           id provincia region subregion trimestre anio pondera cv1c04 cv1c05_a
+## 1  478229345         2      1        1A         4 2018     276      4        2
+## 2  824935596         2      1        1A         4 2018     271      4        3
+## 3  549385244         2      1        1A         1 2017     264      4        2
+## 4   64338930         2      1        1A         3 2018     245      4        3
+## 5  635779227         2      1        1A         3 2018     283      4        3
+## 6     995013         2      1        1A         1 2018     549      4        1
+## 7  459317539         2      1        1A         1 2018     603      4        3
+## 8  712307269         2      1        1A         1 2018     722      4        3
+## 9  474783756         2      1        1A         2 2018     602      4        3
+## 10 489908161         2      1        1A         2 2018     891      4        3
+##    cv1c05_b cv1c05_c cv1c05_d cv1c06_e cv1c06_f cv1c07 cv1c08 cv1c09 cv1c10
+## 1         3        3        3        3        3      1      1      1      1
+## 2         3        3        3        3        3      1      1      1      1
+## 3         3        3        3        3        3      1      1      1      1
+## 4         3        3        3        3        3      1      1      1      1
+## 5         3        3        3        3        3      1      1      1      1
+## 6         1        3        3        3        3      1      1      1      1
+## 7         3        3        3        3        3      1      1      1      1
+## 8         3        3        3        3        3      1      1      1      1
+## 9         2        3        3        3        3      1      1      1      1
+## 10        3        3        3        3        3      1      1      1      1
+##    cv1c11 cv1c12 cv1c13 ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11
+## 1       1      4      2    1    2    2    1    4    1    1    1    1    1    1
+## 2       1      5      2    1    2    2    1    5    2    1    1    1    1    1
+## 3       1      1      2    3   NA   NA   NA    1    1    1    1    1    1    1
+## 4       1      1      2    3   NA   NA   NA    1    1    1    1    1    1    1
+## 5       1      1      3    3   NA   NA   NA    1    1    1    1    1    1    1
+## 6       1      3      3    4   NA   NA   NA    3    2    1    1    1    1    1
+## 7       1      6      3    1    2    2    1    6    1    1    1    1    1    1
+## 8       1      4      3    1    2    2    1    4    3    1    1    1    1    1
+## 9       1      4      3    1    2    2    1    4    1    1    1    1    1    1
+## 10      1      1      2    3   NA   NA   NA    1    1    1    1    1    1    1
+##    ch12 ch13 ch14 ch15 ch16 ch17_a ch17_b ch18 ch19 ch20 ch21 propauto regten
+## 1     1    3    1    1    1      1      1    2    1    7    1        2      1
+## 2     1    3    1    1    1      1      1    1    1    7    1        1      1
+## 3     1    1    1    1    1      2      1    1    1    1    1        1      2
+## 4     1    1    1    1    1      1      1    1    1    1    1        1      2
+## 5     1    1    1    5    1      2      1    2    1    1    1        1      2
+## 6     1    1    1    1    1      1      1    3    1    7    1        2      3
+## 7     1    2    1    1    1      1      1    1    1    7    1        2      1
+## 8     1    3    1    1    1      1      1    4    1    7    1        2      1
+## 9     1    2    1    1    1      1      1    1    1    7    1        1      1
+## 10    1    1    1    5    1      2      2   NA    1    5    1        1      2
+##       hacina jniveled jsexo jedad_agrup jsitconyugal jdif_lp jestado jocupengh
+## 1  0.5000000        4     1           6            2       2       3        NA
+## 2  0.4000000        6     2           6            4       2       3        NA
+## 3  1.0000000        5     1           2            5       2       3        NA
+## 4  1.0000000        5     1           5            3       2       3        NA
+## 5  2.0000000        5     1           2            1       2       1         1
+## 6  1.0000000        2     1           5            1       2       1         1
+## 7  0.1666667        6     2           6            4       1       1         3
+## 8  1.2500000        6     1           5            2       2       1         1
+## 9  0.2500000        6     2           6            5       1       3        NA
+## 10 1.0000000        6     2           3            5       2       1         1
+##    jpercept jcomed tipohog cantping reldep cantmiem cantadequi menor18 menor14
+## 1         1      1       2        2    1.0        2       1.37       0       0
+## 2         1      1       3        1    2.0        2       1.43       0       0
+## 3         1      2       1        1    1.0        1       1.02       0       0
+## 4         1      1       1        1    1.0        1       1.00       0       0
+## 5         1      2       2        2    1.0        2       1.78       0       0
+## 6         1      1       3        3    1.0        3       2.79       0       0
+## 7         1      1       1        1    1.0        1       0.67       0       0
+## 8         1      1       3        2    2.5        5       4.26       3       1
+## 9         1      1       1        1    1.0        1       0.63       0       0
+## 10        1      1       1        1    1.0        1       0.77       0       0
+##    mayor65 dif_lph cant_act permieoc clima_educativo     gastot  gastotpc
+## 1        2       0        0       NA               3  36754.070 18377.035
+## 2        1       0        1       NA               4  30000.700 15000.350
+## 3        0       0        0       NA               3   5816.077  5816.077
+## 4        0       0        0       NA               3  33049.610 33049.610
+## 5        0       0        2      2.0               3  34307.245 17153.623
+## 6        0       0        3      1.0               3  17778.075  5926.025
+## 7        1       1        1      1.0               5  79541.080 79541.080
+## 8        0       0        2      2.5               5 170018.520 34003.704
+## 9        1       1        0       NA               5  24025.570 24025.570
+## 10       0       0        1      1.0               5  27114.949 27114.949
+##    gasto_comunh    gascomp gasvent     gc_01    gc_02 gc_03    gc_04    gc_05
+## 1     26552.590  36754.070       0 4871.2500 1428.900     0  8680.00     0.00
+## 2     28407.260  30000.700       0 6984.2900    0.000     0  7933.00   448.00
+## 3      5085.173   5816.077       0  935.3233    0.000   500   522.45    50.00
+## 4     29996.960  33049.610       0 4334.3300  913.630   200 15000.00     0.00
+## 5     30676.540  34307.245       0 5897.4600    0.000  5450 12175.00  1909.80
+## 6      8674.250  17778.075       0 2983.3700    0.000     0     0.00  1519.41
+## 7     71010.980  79541.080       0 4570.9645 2790.685 17450  8100.00  3900.00
+## 8    163523.520 170018.520       0 1039.2000 4330.000  6000  6340.00 11000.00
+## 9     24025.570  24025.570       0 1359.6200  519.600     0  5136.50  8284.85
+## 10    23746.210  27114.949       0 2495.8120    0.000   240  7810.28   752.00
+##         gc_06     gc_07   gc_08    gc_09 gc_10   gc_11    gc_12   gc09_01
+## 1   4800.0000  2748.480 1725.00  1625.00     0 9893.00   982.44 15393.150
+## 2   9303.2000  1593.440 2690.00   750.00     0    0.00   298.77  6984.290
+## 3      0.0000  1411.304 1060.00   600.00     0  433.00   304.00  1368.323
+## 4      0.0000   368.050 1000.00  3948.50  5000 2035.10   250.00  7283.060
+## 5   2000.0000   771.005 1384.00   900.00     0 2814.50  1005.48  8711.960
+## 6      0.0000  7099.925  303.10  1280.00     0 3464.00  1128.27  6447.370
+## 7   2944.4000 20311.500 1275.00  1125.00     0 1818.60 15254.93  9180.249
+## 8  10000.0000  3928.000 5000.00 36720.00 58440 6495.00 20726.32 11864.200
+## 9   6984.0000     0.000  596.15  1144.85     0    0.00     0.00  1879.220
+## 10   340.9875  4060.830 4112.00  3061.50     0 2671.61  1569.93  5167.422
+##    gc09_02  gc09_03  gc09_04    gc09_05   gc09_06  gc09_07 gc09_08  gc09_09
+## 1        0  8680.00     0.00  4800.0000  5155.920  2425.00     0.0   300.00
+## 2        0  7933.00   448.00  9303.2000  4283.440   750.00     0.0   298.77
+## 3      500   522.45    50.00     0.0000  2471.304     0.00   600.0   304.00
+## 4      200 15000.00     0.00     0.0000  1368.050     0.00  8948.5   250.00
+## 5     5450 12175.00  1909.80  2000.0000  2155.005   900.00     0.0  1005.48
+## 6        0     0.00  1519.41     0.0000  7403.025  1280.00     0.0  1128.27
+## 7    17450 12100.00  3900.00  2944.4000 17586.500  1125.00     0.0 15254.93
+## 8     6000  9840.00 11000.00 10000.0000  7289.200 36720.00 58440.0 18865.12
+## 9        0  5136.50  8284.85  6984.0000   596.150  1144.85     0.0     0.00
+## 10     240  7810.28   752.00   340.9875  8172.830  2161.50   900.0  1569.93
+##    fp_contado fp_credito fp_especie fp_prodprop fp_tarjetas fp_otras   fp_indef
+## 1   35471.590    1040.00        0.0           0     242.480        0  23000.000
+## 2   26902.740    2760.22        0.0           0     337.740        0  36000.000
+## 3    3444.773    2160.00        0.0           0       0.000        0    211.304
+## 4   24758.120    7923.44        0.0           0     368.050        0  10000.000
+## 5   24999.740    5850.00     2814.5           0     643.005        0   7500.000
+## 6   10114.170    6657.18        0.0           0    1006.725        0  10920.000
+## 7   39359.040   36582.04        0.0           0       0.000        0  28600.000
+## 8   26389.200  129129.32     4500.0           0       0.000        0 185000.000
+## 9   15246.570     779.00        0.0           0       0.000        0  43148.000
+## 10  20007.320    5328.00     1558.8           0     220.830        0   5804.000
+##     tn_hipsup tn_autoserv tn_negesp tn_restaurant tn_kiosco tn_internet
+## 1    600.0000     3264.82 12315.770       6495.00   242.480           0
+## 2      0.0000     5802.20 11952.060          0.00   337.740           0
+## 3    985.3233        0.00  2348.000        433.00     0.000           0
+## 4    896.3100     2281.91  8503.340          0.00   368.050           0
+## 5  11309.5400      200.00  4944.000          0.00   816.205           0
+## 6      0.0000     3039.82  9138.030       3464.00  1006.725           0
+## 7   6201.2095        0.00 46098.070       1818.60   173.200           0
+## 8      0.0000        0.00 55843.520       6495.00     0.000           0
+## 9      0.0000     1727.67  8199.400          0.00     0.000           0
+## 10  2305.2920      194.85  6554.488       1199.41   394.030           0
+##    tn_comedor tn_especie tn_otros   tn_indef decgaphp decgaphr decgapht
+## 1           0        0.0    866.0  12970.000        7        9        9
+## 2           0        0.0   1255.7  10653.000        6        8        9
+## 3           0        0.0      0.0   2049.754        2        4        5
+## 4           0        0.0      0.0  21000.000        9       10       10
+## 5           0     2814.5      0.0  14223.000        6        9        9
+## 6           0        0.0    649.5    480.000        2        4        5
+## 7           0        0.0    800.0  24450.000       10       10       10
+## 8           0        0.0      0.0 107680.000        9       10       10
+## 9           0        0.0      0.0  14098.500        8        9       10
+## 10          0     1558.8   1125.8  13782.280        9       10       10
+##    quigaphp quigaphr quigapht gasto_imputado m_gasto_imputado    ingtoth
+## 1         4        5        5          0.000                2  35083.333
+## 2         3        4        5          0.000                2  42666.667
+## 3         1        2        3        692.184                1  15000.000
+## 4         5        5        5          0.000                2  65000.000
+## 5         3        5        5          0.000                2  30883.333
+## 6         1        2        3       7588.325                1  63666.667
+## 7         5        5        5          0.000                2  82666.667
+## 8         5        5        5          0.000                2 219833.333
+## 9         4        5        5          0.000                2   8233.333
+## 10        5        5        5          0.000                2  23166.667
+##       ingpch m_ingtoth ingtoth_imp qinth_p qinth_r qinth_t dinth_p dinth_r
+## 1  17541.667         0           0       3       4       4       5       7
+## 2  21333.333         0           0       4       4       4       7       8
+## 3  15000.000         0           0       1       2       2       2       3
+## 4  65000.000         0           0       5       5       5       9       9
+## 5  15441.667         0           0       3       3       4       5       6
+## 6  21222.222         0           0       4       5       5       8       9
+## 7  82666.667         0           0       5       5       5       9      10
+## 8  43966.667         0           0       5       5       5      10      10
+## 9   8233.333         0           0       1       1       1       1       1
+## 10 23166.667         0           0       2       3       3       3       5
+##    dinth_t qinpch_p qinpch_r qinpch_t dinpch_p dinpch_r dinpch_t
+## 1        7        3        4        4        6        8        8
+## 2        8        4        5        5        7        9        9
+## 3        3        3        4        4        5        7        8
+## 4       10        5        5        5       10       10       10
+## 5        7        3        4        4        5        8        8
+## 6       10        4        5        5        7        9        9
+## 7       10        5        5        5       10       10       10
+## 8       10        5        5        5       10       10       10
+## 9        1        1        3        3        2        5        5
+## 10       5        4        5        5        7        9        9</code></pre>
+<pre class="r"><code># un registro por persona: cada persona se identifica usando &#39;id&#39; y &#39;miembro&#39;
+personas &lt;- read.table(file = &quot;clase7/engho/engho2018_personas.txt&quot;, sep = &quot;|&quot;, dec = &quot;.&quot;,
+    header = TRUE, fill = TRUE)
+
+names(personas)</code></pre>
+<pre><code>##   [1] &quot;id&quot;                &quot;provincia&quot;         &quot;miembro&quot;          
+##   [4] &quot;pondera&quot;           &quot;region&quot;            &quot;subregion&quot;        
+##   [7] &quot;anio&quot;              &quot;trimestre&quot;         &quot;cp03&quot;             
+##  [10] &quot;cp04&quot;              &quot;cp13&quot;              &quot;cp14_01&quot;          
+##  [13] &quot;np14_02&quot;           &quot;cp15_01&quot;           &quot;np15_02&quot;          
+##  [16] &quot;cp16&quot;              &quot;cp17&quot;              &quot;cp18&quot;             
+##  [19] &quot;sitconyugal&quot;       &quot;cp19&quot;              &quot;cp20&quot;             
+##  [22] &quot;cp21&quot;              &quot;cp22&quot;              &quot;niveled&quot;          
+##  [25] &quot;cp23_01&quot;           &quot;cp23_02&quot;           &quot;cp23_03&quot;          
+##  [28] &quot;cp23_04&quot;           &quot;cp23_05&quot;           &quot;cp23_06&quot;          
+##  [31] &quot;cp23_07&quot;           &quot;cp23_08&quot;           &quot;cp23_99&quot;          
+##  [34] &quot;dif_lp&quot;            &quot;dif_lpq&quot;           &quot;dif_lp_qtipo&quot;     
+##  [37] &quot;cp25&quot;              &quot;cp26&quot;              &quot;cp27&quot;             
+##  [40] &quot;cp28&quot;              &quot;cp29&quot;              &quot;cp30&quot;             
+##  [43] &quot;cp31&quot;              &quot;cp32&quot;              &quot;estado&quot;           
+##  [46] &quot;cp33&quot;              &quot;np34&quot;              &quot;np35&quot;             
+##  [49] &quot;cp36&quot;              &quot;cp37&quot;              &quot;cp38&quot;             
+##  [52] &quot;cp39&quot;              &quot;cp40&quot;              &quot;cp41&quot;             
+##  [55] &quot;cp42&quot;              &quot;cp43&quot;              &quot;cp44&quot;             
+##  [58] &quot;cat_ocup&quot;          &quot;cp45_01&quot;           &quot;rama_op&quot;          
+##  [61] &quot;rama_op_2&quot;         &quot;cp49&quot;              &quot;cp51&quot;             
+##  [64] &quot;cp52_01&quot;           &quot;cp53&quot;              &quot;np50&quot;             
+##  [67] &quot;catocup_s&quot;         &quot;rama_os&quot;           &quot;ccdgocpcn&quot;        
+##  [70] &quot;caracter_ocup&quot;     &quot;jer_ocup&quot;          &quot;califica&quot;         
+##  [73] &quot;cp54&quot;              &quot;cp55&quot;              &quot;cp56&quot;             
+##  [76] &quot;cp57&quot;              &quot;cp58&quot;              &quot;cp59&quot;             
+##  [79] &quot;cp60&quot;              &quot;cp61&quot;              &quot;cp62&quot;             
+##  [82] &quot;cp63&quot;              &quot;cp64&quot;              &quot;cp65&quot;             
+##  [85] &quot;cp66&quot;              &quot;cp67&quot;              &quot;cp68&quot;             
+##  [88] &quot;cp69&quot;              &quot;ct70&quot;              &quot;ct71&quot;             
+##  [91] &quot;ct72&quot;              &quot;ct73&quot;              &quot;ct74&quot;             
+##  [94] &quot;ct75&quot;              &quot;ct76&quot;              &quot;ct77&quot;             
+##  [97] &quot;comed&quot;             &quot;edad_agrup&quot;        &quot;adequi&quot;           
+## [100] &quot;viaja_hab&quot;         &quot;gastotc4&quot;          &quot;g131&quot;             
+## [103] &quot;g132&quot;              &quot;g611&quot;              &quot;g612&quot;             
+## [106] &quot;g623&quot;              &quot;g911&quot;              &quot;comed_pub&quot;        
+## [109] &quot;comefuera&quot;         &quot;pubnived&quot;          &quot;percept&quot;          
+## [112] &quot;cantftot&quot;          &quot;cantfimp&quot;          &quot;ingtotp&quot;          
+## [115] &quot;m_ingtotp&quot;         &quot;ingtotp_imp&quot;       &quot;inglabt&quot;          
+## [118] &quot;m_inglabt&quot;         &quot;inglabt_imp&quot;       &quot;ingocpal&quot;         
+## [121] &quot;m_ingocpal&quot;        &quot;ingocpal_imp&quot;      &quot;ingocsec&quot;         
+## [124] &quot;m_ingocsec&quot;        &quot;ingocsec_imp&quot;      &quot;ingocant&quot;         
+## [127] &quot;m_ingocant&quot;        &quot;ingocant_imp&quot;      &quot;ijubilacion&quot;      
+## [130] &quot;m_ijubilacion&quot;     &quot;ijubilacion_imp&quot;   &quot;ipensionesnc&quot;     
+## [133] &quot;m_ipensionesnc&quot;    &quot;ipensionesnc_imp&quot;  &quot;irentas&quot;          
+## [136] &quot;m_irentas&quot;         &quot;irentas_imp&quot;       &quot;iasignaciones&quot;    
+## [139] &quot;m_iasignaciones&quot;   &quot;iasignaciones_imp&quot; &quot;icuotaali&quot;        
+## [142] &quot;m_icuotaali&quot;       &quot;icuotaali_imp&quot;     &quot;iayfliar&quot;         
+## [145] &quot;m_iayfliar&quot;        &quot;iayfliar_imp&quot;      &quot;ibecaspub&quot;        
+## [148] &quot;m_ibecaspub&quot;       &quot;ibecaspub_imp&quot;     &quot;iotrosps&quot;         
+## [151] &quot;m_iotrosps&quot;        &quot;iotrosps_imp&quot;      &quot;itransfermon&quot;     
+## [154] &quot;m_itransfermon&quot;    &quot;itransfermon_imp&quot;  &quot;iautoconsumo&quot;     
+## [157] &quot;m_iautoconsumo&quot;    &quot;iautoconsumo_imp&quot;</code></pre>
+<pre class="r"><code>head(personas, 10)</code></pre>
+<pre><code>##           id provincia miembro pondera region subregion anio trimestre cp03
+## 1  478229345         2       1     276      1        1A 2018         4   83
+## 2  478229345         2       2     276      1        1A 2018         4   82
+## 3  824935596         2       1     271      1        1A 2018         4   75
+## 4  824935596         2       2     271      1        1A 2018         4   51
+## 5  549385244         2       1     264      1        1A 2017         1   19
+## 6   64338930         2       1     245      1        1A 2018         3   56
+## 7  635779227         2       1     283      1        1A 2018         3   23
+## 8  635779227         2       2     283      1        1A 2018         3   23
+## 9     995013         2       1     549      1        1A 2018         1   56
+## 10    995013         2       2     549      1        1A 2018         1   43
+##    cp04 cp13 cp14_01 np14_02 cp15_01 np15_02 cp16 cp17 cp18 sitconyugal cp19
+## 1     1    1       2      NA       2      NA    2    1    1           2    4
+## 2     2    2       2      NA       2      NA    2    1    1           2    4
+## 3     1    2       2      NA       2      NA    5    2   NA           4    4
+## 4     3    2       1       1       2      NA    1    2   NA           5    4
+## 5     1    1       2      NA       2      NA    1    2   NA           5    1
+## 6     1    1       2      NA       2      NA    2    2   NA           3    2
+## 7     1    1       2      NA       2      NA    1    1    2           1    1
+## 8     2    2       2      NA       2      NA    1    1    2           1    1
+## 9     1    1       2      NA       2      NA    4    1    2           1    4
+## 10    2    2       2      NA       2      NA    1    1    2           1    4
+##    cp20 cp21 cp22 niveled cp23_01 cp23_02 cp23_03 cp23_04 cp23_05 cp23_06
+## 1     6    1   NA       4       2       2       2       1       2       2
+## 2     9    2    2       5       2       2       2       1       2       2
+## 3     8    1   NA       6       1       2       2       1       2       2
+## 4     8    1   NA       6       2       2       2       1       2       2
+## 5     9    2    1       5       2       2       2       2       2       2
+## 6     9    2    1       5       2       1       2       2       2       2
+## 7     9    2    1       5       2       2       2       2       2       2
+## 8     9    2    1       5       2       2       2       1       2       2
+## 9     5    1   NA       2       2       1       2       2       2       2
+## 10    8    1   NA       6       2       1       2       2       2       2
+##    cp23_07 cp23_08 cp23_99 dif_lp dif_lpq dif_lp_qtipo cp25 cp26 cp27 cp28 cp29
+## 1        2       2      NA      2       0            0    2    2   NA   NA    1
+## 2        2       2      NA      2       0            0    2    2   NA   NA    1
+## 3        2       2      NA      2       0            0    2    2   NA   NA    1
+## 4        2       2      NA      2       0            0    2    2   NA   NA    1
+## 5        2       1      NA      2       0            0    2    2   NA   NA    1
+## 6        2       2      NA      2       0            0    2    2   NA   NA    1
+## 7        2       1      NA      2       0            0    2    1    1   NA   NA
+## 8        2       2      NA      2       0            0    2    2   NA   NA    3
+## 9        2       2      NA      2       0            0    2    1    1   NA   NA
+## 10       2       2      NA      2       0            0    2    1    1   NA   NA
+##    cp30 cp31 cp32 estado cp33 np34 np35 cp36 cp37 cp38 cp39 cp40 cp41 cp42 cp43
+## 1    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## 2    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## 3    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## 4    NA    1   NA      2   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## 5    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## 6    NA    2    5      3   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## 7    NA   NA   NA      1    1   48   NA    2    4   NA    1   NA   NA   NA   NA
+## 8    NA    1   NA      2   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA   NA
+## 9    NA   NA   NA      1    1   55   NA    2    4   NA    1   NA   NA   NA   NA
+## 10   NA   NA   NA      1    1   48   NA    2    4   NA    1   NA   NA   NA   NA
+##    cp44 cat_ocup cp45_01 rama_op rama_op_2 cp49 cp51 cp52_01 cp53 np50
+## 1    NA       NA      NA                     NA   NA      NA   NA   NA
+## 2    NA       NA      NA                     NA   NA      NA   NA   NA
+## 3    NA       NA      NA                     NA   NA      NA   NA   NA
+## 4    NA       NA      NA                     NA   NA      NA   NA   NA
+## 5    NA       NA      NA                     NA   NA      NA   NA   NA
+## 6    NA       NA      NA                     NA   NA      NA   NA   NA
+## 7     1        3       1    5601         I    5   NA      NA   NA   NA
+## 8    NA       NA      NA                     NA   NA      NA   NA   NA
+## 9     1        3       1    9409         S    2   NA      NA   NA   NA
+## 10    1        3       1    8700         Q    3   NA      NA   NA   NA
+##    catocup_s rama_os ccdgocpcn caracter_ocup jer_ocup califica cp54 cp55 cp56
+## 1         NA                NA            NA       NA       NA    2    2    2
+## 2         NA                NA            NA       NA       NA    2    2    2
+## 3         NA                NA            NA       NA       NA    2    2    2
+## 4         NA                NA            NA       NA       NA    2    2    2
+## 5         NA                NA            NA       NA       NA    2    2    2
+## 6         NA                NA            NA       NA       NA    2    2    2
+## 7         NA             53314            53        3        4    1    2    2
+## 8         NA                NA            NA       NA       NA    2    2    2
+## 9         NA             56313            56        3        3    1    2    2
+## 10        NA             40313            40        3        3    1    2    2
+##    cp57 cp58 cp59 cp60 cp61 cp62 cp63 cp64 cp65 cp66 cp67 cp68 cp69 ct70 ct71
+## 1     1    2    2    2    2    2    2    2    2    2    2    2    2   88   88
+## 2     1    2    2    2    2    2    2    2    2    2    2    2    2    4   88
+## 3     1    2    2    1    2    2    2    2    2    2    2    2    2   88   88
+## 4     2    2    2    2    2    2    2    2    2    2    2    2    2    6   88
+## 5     2    2    2    2    2    2    2    2    2    2    1    2    2    8   88
+## 6     1    2    2    2    2    2    2    2    2    2    2    2    2    8   88
+## 7     2    2    2    2    2    2    2    2    2    2    2    2    2    5   88
+## 8     2    2    2    2    2    2    2    2    2    2    1    2    2    4   88
+## 9     2    2    2    2    2    2    2    2    2    2    2    2    2   88   88
+## 10    2    2    2    2    2    2    2    2    2    2    2    2    2    6   88
+##    ct72 ct73 ct74 ct75 ct76 ct77 comed edad_agrup adequi viaja_hab gastotc4
+## 1    88    2    2   NA    1    4     1          6   0.74         1 8660.000
+## 2    88   88    2   NA    1    4     1          6   0.63         1 1541.480
+## 3    88    2    2   NA    2    4     1          6   0.67         1 1255.700
+## 4    88   88    2   NA    2    4     1          5   0.76         1  337.740
+## 5    88   88    2   NA    1    4     2          2   1.02         1  730.904
+## 6    88   88    2   NA    1    4     1          5   1.00         1 3052.650
+## 7     5   88    1    2    2    4     2          2   1.02         1 3388.225
+## 8     2   88    2   NA    2    4     1          2   0.76         1  242.480
+## 9    88   88    2   NA    2    4     1          5   1.00         2 1515.500
+## 10   88   88    1    2    2    4     1          4   0.77         1 1177.760
+##      g131 g132   g611     g612  g623 g911 comed_pub comefuera pubnived percept
+## 1  6495.0    0    0.0  866.000   0.0    0         3         1        3       1
+## 2     0.0    0    0.0  242.480   0.0    0         3         1        3       1
+## 3     0.0    0    0.0 1255.700   0.0    0         3         2        4       1
+## 4     0.0    0    0.0  337.740   0.0    0         3         2        4       2
+## 5     0.0    0    0.0  211.304   0.0    0         1         1        3       1
+## 6     0.0    0    0.0  368.050   0.0    0         2         1        3       1
+## 7  2814.5    0    0.0  400.525   0.0    0         1         2        3       1
+## 8     0.0    0    0.0  242.480   0.0    0         3         2        3       1
+## 9     0.0    0 1515.5    0.000   0.0    0         2         2        2       1
+## 10    0.0    0    0.0  874.660 303.1    0         2         2        4       1
+##    cantftot cantfimp   ingtotp m_ingtotp ingtotp_imp  inglabt m_inglabt
+## 1         1        0 27000.000         0           0     0.00         2
+## 2         1        0  8083.333         0           0     0.00         2
+## 3         2        0 42666.667         0           0     0.00         2
+## 4        NA       NA        NA         2          NA       NA        NA
+## 5         1        0 15000.000         0           0     0.00         2
+## 6         1        0 65000.000         0           0     0.00         2
+## 7         1        0 26633.333         0           0 26633.33         0
+## 8         1        0  4250.000         0           0     0.00         2
+## 9         1        0 42000.000         0           0 42000.00         0
+## 10        1        0 15166.667         0           0 15166.67         0
+##    inglabt_imp ingocpal m_ingocpal ingocpal_imp ingocsec m_ingocsec
+## 1            0     0.00          2            0        0          2
+## 2            0     0.00          2            0        0          2
+## 3            0     0.00          2            0        0          2
+## 4           NA       NA         NA           NA       NA         NA
+## 5            0     0.00          2            0        0          2
+## 6            0     0.00          2            0        0          2
+## 7            0 26633.33          0            0        0          2
+## 8            0     0.00          2            0        0          2
+## 9            0 42000.00          0            0        0          2
+## 10           0 15166.67          0            0        0          2
+##    ingocsec_imp ingocant m_ingocant ingocant_imp ijubilacion m_ijubilacion
+## 1             0        0          2            0   27000.000             0
+## 2             0        0          2            0    8083.333             0
+## 3             0        0          2            0   26000.000             0
+## 4            NA       NA         NA           NA          NA            NA
+## 5             0        0          2            0       0.000             2
+## 6             0        0          2            0   65000.000             0
+## 7             0        0          2            0       0.000             2
+## 8             0        0          2            0       0.000             2
+## 9             0        0          2            0       0.000             2
+## 10            0        0          2            0       0.000             2
+##    ijubilacion_imp ipensionesnc m_ipensionesnc ipensionesnc_imp  irentas
+## 1                0            0              2                0     0.00
+## 2                0            0              2                0     0.00
+## 3                0            0              2                0 16666.67
+## 4               NA           NA             NA               NA       NA
+## 5                0            0              2                0     0.00
+## 6                0            0              2                0     0.00
+## 7                0            0              2                0     0.00
+## 8                0            0              2                0     0.00
+## 9                0            0              2                0     0.00
+## 10               0            0              2                0     0.00
+##    m_irentas irentas_imp iasignaciones m_iasignaciones iasignaciones_imp
+## 1          2           0             0               2                 0
+## 2          2           0             0               2                 0
+## 3          0           0             0               2                 0
+## 4         NA          NA            NA              NA                NA
+## 5          2           0             0               2                 0
+## 6          2           0             0               2                 0
+## 7          2           0             0               2                 0
+## 8          2           0             0               2                 0
+## 9          2           0             0               2                 0
+## 10         2           0             0               2                 0
+##    icuotaali m_icuotaali icuotaali_imp iayfliar m_iayfliar iayfliar_imp
+## 1          0           2             0        0          2            0
+## 2          0           2             0        0          2            0
+## 3          0           2             0        0          2            0
+## 4         NA          NA            NA       NA         NA           NA
+## 5          0           2             0    15000          0            0
+## 6          0           2             0        0          2            0
+## 7          0           2             0        0          2            0
+## 8          0           2             0     4250          0            0
+## 9          0           2             0        0          2            0
+## 10         0           2             0        0          2            0
+##    ibecaspub m_ibecaspub ibecaspub_imp iotrosps m_iotrosps iotrosps_imp
+## 1          0           2             0        0          2            0
+## 2          0           2             0        0          2            0
+## 3          0           2             0        0          2            0
+## 4         NA          NA            NA       NA         NA           NA
+## 5          0           2             0        0          2            0
+## 6          0           2             0        0          2            0
+## 7          0           2             0        0          2            0
+## 8          0           2             0        0          2            0
+## 9          0           2             0        0          2            0
+## 10         0           2             0        0          2            0
+##    itransfermon m_itransfermon itransfermon_imp iautoconsumo m_iautoconsumo
+## 1             0              2                0            0              2
+## 2             0              2                0            0              2
+## 3             0              2                0            0              2
+## 4            NA             NA               NA           NA             NA
+## 5             0              2                0            0              2
+## 6             0              2                0            0              2
+## 7             0              2                0            0              2
+## 8             0              2                0            0              2
+## 9             0              2                0            0              2
+## 10            0              2                0            0              2
+##    iautoconsumo_imp
+## 1                 0
+## 2                 0
+## 3                 0
+## 4                NA
+## 5                 0
+## 6                 0
+## 7                 0
+## 8                 0
+## 9                 0
+## 10                0</code></pre>
+<pre class="r"><code>base_integrada &lt;- gastos %&gt;%
+    left_join(., hogares, by = &quot;id&quot;) %&gt;%
+    left_join(., personas, by = c(&quot;id&quot;, &quot;miembro&quot;))
+
+
+# ojo! hay variables duplicadas en las bases: ver aquellas que quedan con
+# nombres .x, .y para que no nos pase, seleccionar sólo las variables
+# relevantes para nuestro análisis y hacer el join, generando una base más
+# chica con las variables que nos interesan para el análisis
+
+names(base_integrada)</code></pre>
+<pre><code>##   [1] &quot;id&quot;                &quot;provincia.x&quot;       &quot;miembro&quot;          
+##   [4] &quot;pondera.x&quot;         &quot;region.x&quot;          &quot;subregion.x&quot;      
+##   [7] &quot;articulo&quot;          &quot;subclase&quot;          &quot;clase&quot;            
+##  [10] &quot;grupo&quot;             &quot;division&quot;          &quot;r_imputado&quot;       
+##  [13] &quot;cantidad&quot;          &quot;unmed&quot;             &quot;monto&quot;            
+##  [16] &quot;forma_pago&quot;        &quot;tipo_negocio&quot;      &quot;modo_adq&quot;         
+##  [19] &quot;lugar_adq&quot;         &quot;provincia.y&quot;       &quot;region.y&quot;         
+##  [22] &quot;subregion.y&quot;       &quot;trimestre.x&quot;       &quot;anio.x&quot;           
+##  [25] &quot;pondera.y&quot;         &quot;cv1c04&quot;            &quot;cv1c05_a&quot;         
+##  [28] &quot;cv1c05_b&quot;          &quot;cv1c05_c&quot;          &quot;cv1c05_d&quot;         
+##  [31] &quot;cv1c06_e&quot;          &quot;cv1c06_f&quot;          &quot;cv1c07&quot;           
+##  [34] &quot;cv1c08&quot;            &quot;cv1c09&quot;            &quot;cv1c10&quot;           
+##  [37] &quot;cv1c11&quot;            &quot;cv1c12&quot;            &quot;cv1c13&quot;           
+##  [40] &quot;ch01&quot;              &quot;ch02&quot;              &quot;ch03&quot;             
+##  [43] &quot;ch04&quot;              &quot;ch05&quot;              &quot;ch06&quot;             
+##  [46] &quot;ch07&quot;              &quot;ch08&quot;              &quot;ch09&quot;             
+##  [49] &quot;ch10&quot;              &quot;ch11&quot;              &quot;ch12&quot;             
+##  [52] &quot;ch13&quot;              &quot;ch14&quot;              &quot;ch15&quot;             
+##  [55] &quot;ch16&quot;              &quot;ch17_a&quot;            &quot;ch17_b&quot;           
+##  [58] &quot;ch18&quot;              &quot;ch19&quot;              &quot;ch20&quot;             
+##  [61] &quot;ch21&quot;              &quot;propauto&quot;          &quot;regten&quot;           
+##  [64] &quot;hacina&quot;            &quot;jniveled&quot;          &quot;jsexo&quot;            
+##  [67] &quot;jedad_agrup&quot;       &quot;jsitconyugal&quot;      &quot;jdif_lp&quot;          
+##  [70] &quot;jestado&quot;           &quot;jocupengh&quot;         &quot;jpercept&quot;         
+##  [73] &quot;jcomed&quot;            &quot;tipohog&quot;           &quot;cantping&quot;         
+##  [76] &quot;reldep&quot;            &quot;cantmiem&quot;          &quot;cantadequi&quot;       
+##  [79] &quot;menor18&quot;           &quot;menor14&quot;           &quot;mayor65&quot;          
+##  [82] &quot;dif_lph&quot;           &quot;cant_act&quot;          &quot;permieoc&quot;         
+##  [85] &quot;clima_educativo&quot;   &quot;gastot&quot;            &quot;gastotpc&quot;         
+##  [88] &quot;gasto_comunh&quot;      &quot;gascomp&quot;           &quot;gasvent&quot;          
+##  [91] &quot;gc_01&quot;             &quot;gc_02&quot;             &quot;gc_03&quot;            
+##  [94] &quot;gc_04&quot;             &quot;gc_05&quot;             &quot;gc_06&quot;            
+##  [97] &quot;gc_07&quot;             &quot;gc_08&quot;             &quot;gc_09&quot;            
+## [100] &quot;gc_10&quot;             &quot;gc_11&quot;             &quot;gc_12&quot;            
+## [103] &quot;gc09_01&quot;           &quot;gc09_02&quot;           &quot;gc09_03&quot;          
+## [106] &quot;gc09_04&quot;           &quot;gc09_05&quot;           &quot;gc09_06&quot;          
+## [109] &quot;gc09_07&quot;           &quot;gc09_08&quot;           &quot;gc09_09&quot;          
+## [112] &quot;fp_contado&quot;        &quot;fp_credito&quot;        &quot;fp_especie&quot;       
+## [115] &quot;fp_prodprop&quot;       &quot;fp_tarjetas&quot;       &quot;fp_otras&quot;         
+## [118] &quot;fp_indef&quot;          &quot;tn_hipsup&quot;         &quot;tn_autoserv&quot;      
+## [121] &quot;tn_negesp&quot;         &quot;tn_restaurant&quot;     &quot;tn_kiosco&quot;        
+## [124] &quot;tn_internet&quot;       &quot;tn_comedor&quot;        &quot;tn_especie&quot;       
+## [127] &quot;tn_otros&quot;          &quot;tn_indef&quot;          &quot;decgaphp&quot;         
+## [130] &quot;decgaphr&quot;          &quot;decgapht&quot;          &quot;quigaphp&quot;         
+## [133] &quot;quigaphr&quot;          &quot;quigapht&quot;          &quot;gasto_imputado&quot;   
+## [136] &quot;m_gasto_imputado&quot;  &quot;ingtoth&quot;           &quot;ingpch&quot;           
+## [139] &quot;m_ingtoth&quot;         &quot;ingtoth_imp&quot;       &quot;qinth_p&quot;          
+## [142] &quot;qinth_r&quot;           &quot;qinth_t&quot;           &quot;dinth_p&quot;          
+## [145] &quot;dinth_r&quot;           &quot;dinth_t&quot;           &quot;qinpch_p&quot;         
+## [148] &quot;qinpch_r&quot;          &quot;qinpch_t&quot;          &quot;dinpch_p&quot;         
+## [151] &quot;dinpch_r&quot;          &quot;dinpch_t&quot;          &quot;provincia&quot;        
+## [154] &quot;pondera&quot;           &quot;region&quot;            &quot;subregion&quot;        
+## [157] &quot;anio.y&quot;            &quot;trimestre.y&quot;       &quot;cp03&quot;             
+## [160] &quot;cp04&quot;              &quot;cp13&quot;              &quot;cp14_01&quot;          
+## [163] &quot;np14_02&quot;           &quot;cp15_01&quot;           &quot;np15_02&quot;          
+## [166] &quot;cp16&quot;              &quot;cp17&quot;              &quot;cp18&quot;             
+## [169] &quot;sitconyugal&quot;       &quot;cp19&quot;              &quot;cp20&quot;             
+## [172] &quot;cp21&quot;              &quot;cp22&quot;              &quot;niveled&quot;          
+## [175] &quot;cp23_01&quot;           &quot;cp23_02&quot;           &quot;cp23_03&quot;          
+## [178] &quot;cp23_04&quot;           &quot;cp23_05&quot;           &quot;cp23_06&quot;          
+## [181] &quot;cp23_07&quot;           &quot;cp23_08&quot;           &quot;cp23_99&quot;          
+## [184] &quot;dif_lp&quot;            &quot;dif_lpq&quot;           &quot;dif_lp_qtipo&quot;     
+## [187] &quot;cp25&quot;              &quot;cp26&quot;              &quot;cp27&quot;             
+## [190] &quot;cp28&quot;              &quot;cp29&quot;              &quot;cp30&quot;             
+## [193] &quot;cp31&quot;              &quot;cp32&quot;              &quot;estado&quot;           
+## [196] &quot;cp33&quot;              &quot;np34&quot;              &quot;np35&quot;             
+## [199] &quot;cp36&quot;              &quot;cp37&quot;              &quot;cp38&quot;             
+## [202] &quot;cp39&quot;              &quot;cp40&quot;              &quot;cp41&quot;             
+## [205] &quot;cp42&quot;              &quot;cp43&quot;              &quot;cp44&quot;             
+## [208] &quot;cat_ocup&quot;          &quot;cp45_01&quot;           &quot;rama_op&quot;          
+## [211] &quot;rama_op_2&quot;         &quot;cp49&quot;              &quot;cp51&quot;             
+## [214] &quot;cp52_01&quot;           &quot;cp53&quot;              &quot;np50&quot;             
+## [217] &quot;catocup_s&quot;         &quot;rama_os&quot;           &quot;ccdgocpcn&quot;        
+## [220] &quot;caracter_ocup&quot;     &quot;jer_ocup&quot;          &quot;califica&quot;         
+## [223] &quot;cp54&quot;              &quot;cp55&quot;              &quot;cp56&quot;             
+## [226] &quot;cp57&quot;              &quot;cp58&quot;              &quot;cp59&quot;             
+## [229] &quot;cp60&quot;              &quot;cp61&quot;              &quot;cp62&quot;             
+## [232] &quot;cp63&quot;              &quot;cp64&quot;              &quot;cp65&quot;             
+## [235] &quot;cp66&quot;              &quot;cp67&quot;              &quot;cp68&quot;             
+## [238] &quot;cp69&quot;              &quot;ct70&quot;              &quot;ct71&quot;             
+## [241] &quot;ct72&quot;              &quot;ct73&quot;              &quot;ct74&quot;             
+## [244] &quot;ct75&quot;              &quot;ct76&quot;              &quot;ct77&quot;             
+## [247] &quot;comed&quot;             &quot;edad_agrup&quot;        &quot;adequi&quot;           
+## [250] &quot;viaja_hab&quot;         &quot;gastotc4&quot;          &quot;g131&quot;             
+## [253] &quot;g132&quot;              &quot;g611&quot;              &quot;g612&quot;             
+## [256] &quot;g623&quot;              &quot;g911&quot;              &quot;comed_pub&quot;        
+## [259] &quot;comefuera&quot;         &quot;pubnived&quot;          &quot;percept&quot;          
+## [262] &quot;cantftot&quot;          &quot;cantfimp&quot;          &quot;ingtotp&quot;          
+## [265] &quot;m_ingtotp&quot;         &quot;ingtotp_imp&quot;       &quot;inglabt&quot;          
+## [268] &quot;m_inglabt&quot;         &quot;inglabt_imp&quot;       &quot;ingocpal&quot;         
+## [271] &quot;m_ingocpal&quot;        &quot;ingocpal_imp&quot;      &quot;ingocsec&quot;         
+## [274] &quot;m_ingocsec&quot;        &quot;ingocsec_imp&quot;      &quot;ingocant&quot;         
+## [277] &quot;m_ingocant&quot;        &quot;ingocant_imp&quot;      &quot;ijubilacion&quot;      
+## [280] &quot;m_ijubilacion&quot;     &quot;ijubilacion_imp&quot;   &quot;ipensionesnc&quot;     
+## [283] &quot;m_ipensionesnc&quot;    &quot;ipensionesnc_imp&quot;  &quot;irentas&quot;          
+## [286] &quot;m_irentas&quot;         &quot;irentas_imp&quot;       &quot;iasignaciones&quot;    
+## [289] &quot;m_iasignaciones&quot;   &quot;iasignaciones_imp&quot; &quot;icuotaali&quot;        
+## [292] &quot;m_icuotaali&quot;       &quot;icuotaali_imp&quot;     &quot;iayfliar&quot;         
+## [295] &quot;m_iayfliar&quot;        &quot;iayfliar_imp&quot;      &quot;ibecaspub&quot;        
+## [298] &quot;m_ibecaspub&quot;       &quot;ibecaspub_imp&quot;     &quot;iotrosps&quot;         
+## [301] &quot;m_iotrosps&quot;        &quot;iotrosps_imp&quot;      &quot;itransfermon&quot;     
+## [304] &quot;m_itransfermon&quot;    &quot;itransfermon_imp&quot;  &quot;iautoconsumo&quot;     
+## [307] &quot;m_iautoconsumo&quot;    &quot;iautoconsumo_imp&quot;</code></pre>
+</div>
+<div id="ejemplo-de-procesamiento" class="section level2">
+<h2>Ejemplo de procesamiento</h2>
+<p>¿Quién gasta más en productos de gestión menstrual?</p>
+<p>Recurro al código de artículo de cada uno de estos productos. Además,
+como siempre en una encuesta, aplico el ponderador (pondera) para
+obtener estadísticas descriptivas que representen a la población
+total.</p>
+<pre class="r"><code>base_integrada %&gt;% 
+   group_by(dinth_t) %&gt;% #decil de ingreso total del hogar
+    summarise(gasto_gestion_menstrual = weighted.mean(monto[articulo == &#39;A1213108&#39;], pondera.x[articulo == &#39;A1213108&#39;],na.rm=T)) </code></pre>
+<pre><code>## # A tibble: 10 x 2
+##    dinth_t gasto_gestion_menstrual
+##      &lt;int&gt;                   &lt;dbl&gt;
+##  1       1                    169.
+##  2       2                    187.
+##  3       3                    197.
+##  4       4                    177.
+##  5       5                    294.
+##  6       6                    265.
+##  7       7                    312.
+##  8       8                    340.
+##  9       9                    336.
+## 10      10                    422.</code></pre>
+<p>Podemos observar a partir de este procesamiento que el gasto en
+productos de gestión menstrual crece con los ingresos del hogar ¿Cómo
+podemos interpretar esto? Se trata de un gasto que se ajusta en los
+hogares con mayores carencias económicas (a pesar de que las personas
+que menstrúan necesitan estos productos independientemente de su
+situación socioeconómica).</p>
+</div>
 </div>
 
 
