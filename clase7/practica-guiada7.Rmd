@@ -31,6 +31,13 @@ En particular, les traemos algunas **bases de datos** que pueden resultarles út
 
 # La comunidad de R, ¿qué hacemos cuando el código no corre?
 
+Existe una gran comunidad de usuarios de R, que podrían ayudarnos cuando nos enfrentamos a alguna dificultad.
+
+En general, si un código no funciona, es útil *googlear* nuestro error (probablemente no seamos la primera persona en haber encontrado esta dificultad), así como también recurrir a la *ayuda de R* para chequear el funcionamiento de las funciones y los paquetes que estamos usando.
+
+También podemos tejer redes con usuarios y usuarios dispuestes a darnos una mano, por ejemplo:
+
++ R-Ladies Buenos Aires: https://www.meetup.com/es-ES/rladies-buenos-aires/?_cookie-check=RaPc633BUjPoa2Ty
 
 
 # ENGHo
