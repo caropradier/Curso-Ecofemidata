@@ -211,3 +211,154 @@ ggplot(tabla_resultados,aes(y = valor, x = factor(dinth_t),
 
 ```
 
+# EANNA
+
+La EANNA es una encuesta realizada por el Ministerio de Trabajo, Empleo y Seguridad Social, cuyo objetivo  es proporcionar información estadística sobre los niños, niñas y adolescentes de 5 a 17 años de edad involucrados en actividades económicas y no económicas. La encuesta especifica en características demográficas, educativas y socioeconómicas generales de los hogares de pertenencia, pormenorizando los rasgos distintivos del trabajo infantil y las principales razones que sustentan el fenómeno.
+
+```{r}
+library(readr)
+library(tidyverse)
+eanna_urb <- read_delim("./EANNA/EANNA_urbana.csv")
+
+```
+```{r}
+eanna_urb <- eanna_urb %>% mutate(C2_P03 = case_when(
+  C2_P03 == 1 ~ "Varón",
+  C2_P03 == 2 ~ "Mujer"
+))
+
+eanna_urb <- eanna_urb %>% mutate(C3_E01 = case_when(
+  C3_E01 == 1 ~ "Sí",
+  C3_E01 == 2 ~ "No",
+  C3_E01 == 9 ~ "Sin datos"
+))
+
+eanna_urb <- eanna_urb %>% mutate(C3_E02 = case_when(
+  C3_E01 == 1 ~ "Sí",
+  C3_E01 == 2 ~ "No",
+  C3_E01 == 9 ~ "Sin datos"
+))
+
+eanna_urb <- eanna_urb %>% mutate(C3_E12 = factor(case_when(
+  C3_E12 == 1 ~ "Nivel inicial",
+  C3_E12 == 2 ~ "Nivel básico (primario)",
+  C3_E12 == 3 ~ "Nivel básico (EGB)",
+  C3_E12 == 4 ~ "Nivel medio (secundario)",
+  C3_E12 == 5 ~ "Nivel medio (polimodal)"
+), levels = c("Nivel inicial", "Nivel básico (primario)", "Nivel básico (EGB)",
+              "Nivel medio (secundario)", "Nivel medio (polimodal)")))
+
+eanna_urb <- eanna_urb %>% mutate(Diagvenn = case_when(
+  Diagvenn == 1 ~ "Solo trabaja",
+  Diagvenn == 2 ~ "Solo realiza actividad para el autoconsumo",
+  Diagvenn == 3 ~ "Solo realiza actividad doméstica ",
+  Diagvenn == 4 ~ "Trabaja y realiza autoconsumo",
+  Diagvenn == 5 ~ "Trabaja y actividad doméstica",
+  Diagvenn == 6 ~ "Realiza autoconsumo y doméstica" ,
+  Diagvenn == 7 ~ "Trabaja, autoconsumo y doméstica",
+  Diagvenn == 8 ~ "Resto"
+))
+
+eanna_urb <- eanna_urb %>% mutate(asiste_colegio = case_when(
+  C3_E01 == "No" ~ "No asiste al colegio",
+  C3_E01 == "Sí" ~ "Asiste al colegio",
+  TRUE ~ "Sin datos"))
+
+```
+
+```{r}
+eanna_urb %>% 
+  ggplot(aes(x=C2_P03))+
+  geom_bar() +
+  labs(x = "Sexo",
+       y = "n")+
+  theme_minimal()
+
+```
+
+```{r}
+eanna_urb %>% 
+  filter(C3_E01 != "Sin datos") %>%
+  ggplot(aes(x=C3_E01, fill = C2_P03))+
+  geom_bar(position = 'dodge') +
+  labs(x = "Asiste a la escuela/jardín",
+       y = "n",
+       fill ="Sexo")+
+  theme_minimal()
+
+```
+```{r}
+no_escolaridad <- eanna_urb %>% filter(C3_E01 == "No") #No asiste a la escuela/jardín
+
+no_escolaridad %>%
+  group_by(C2_P03, C3_E16) %>%
+  summarise(n=n())%>%
+  mutate(C3_E16 = as.numeric(C3_E16)) %>%
+  filter(C3_E16 < 17) %>%
+  group_by(C2_P03)%>%
+  mutate(perc = n/sum(n)*100)%>%
+  ggplot(aes(x=as.numeric(C3_E16), y = perc, fill = C2_P03))+
+  geom_col(position = 'dodge') +
+  labs(x = "Edad de abandono escolar",
+       y = "%",
+       fill = "Sexo",
+       caption = "Submuestra: 477 casos")+
+  theme_minimal()
+
+```
+
+```{r}
+rtas_abandono <-no_escolaridad %>% 
+  group_by(C2_P03)%>%
+  mutate(n_total=n())%>%
+  select(C2_P03, C3_E17_01:C3_E17_13, n_total) %>%
+  pivot_longer(cols = -c(C2_P03, n_total), names_to = "motivo", values_to = "rta") %>%
+  mutate(motivo = case_when(
+      motivo == "C3_E17_01" | motivo == "C3_E17_03" | motivo == "C3_E17_08" | motivo == "C3_E17_11"~ "Desinterés/desaliento/dificultad", #Desinterés/desaliento/dificultad
+      motivo == "C3_E17_02" | motivo == "C3_E17_04"  | motivo == "C3_E17_06" | motivo == "C3_E17_12" ~ "Problemas de oferta", #Problemas de oferta
+      motivo == "C3_E17_05" ~ "Problemas económicos", 
+      motivo == "C3_E17_07" ~ "Decisión de los padres", 
+      motivo == "C3_E17_09" | motivo == "C3_E17_13" ~ "Tareas de cuidado", #Tareas de cuidado
+      motivo == "C3_E17_10" ~ "Necesitaba/quería trabajar"
+          ),
+      rta = case_when(
+        rta == "1" ~ 1,
+        rta == "2" ~ 0,
+        TRUE ~ 9
+      )) 
+
+rtas_abandono %>% group_by(C2_P03, n_total, motivo) %>%
+  filter(rta < 9) %>%
+  summarise(n=sum(as.numeric(rta))) %>%
+  filter(n>0) %>% 
+  mutate(perc = n/n_total*100) %>%
+  ggplot(aes(x=motivo, y = perc, fill = C2_P03))+
+  geom_col(position = 'dodge') +
+  labs(x = "Motivo de abandono",
+       y = "%",
+       fill = "Sexo",
+       caption = "Submuestra: 154 casos")+
+  theme_minimal()+ 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+```{r}
+
+eanna_urb %>% group_by(C2_P03, asiste_colegio, Diagvenn) %>%
+  summarize(n=n())%>%
+  filter(Diagvenn != "Resto")%>%
+  ungroup()%>%
+  group_by(C2_P03, asiste_colegio) %>%
+  mutate(perc = n/sum(n)*100)%>% 
+  filter(Diagvenn != "Resto")%>%
+  ggplot(aes(x=Diagvenn, y=perc, fill = C2_P03))+
+  geom_col(position = 'dodge')+
+  facet_wrap(vars(asiste_colegio))+
+  coord_flip()+
+  labs(x = "Tipo de trabajo",
+       y = "%",
+       fill = "Sexo")+
+  theme_minimal()
+
+```
+
