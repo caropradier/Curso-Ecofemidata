@@ -49,7 +49,7 @@ El INDEC realizó la Encuesta Nacional de Gastos de los Hogares 2017-2018 (ENGHo
 La base de artículos contiene la descripción de los productos y las divisiones, los grupos, las clases y las subclases que los contienen (en la base de gastos aparece el código, no la descripción).
 
 ```{r}
-articulos <- read.table(file ="clase7/engho/engho2018_articulos.txt",sep="|", dec=".", header = TRUE, fill = TRUE,fileEncoding = "UTF-8")
+articulos <- read.table(file ="./engho/engho2018_articulos.txt",sep="|", dec=".", header = TRUE, fill = TRUE,fileEncoding = "UTF-8")
 
 #por ejemplo, para ver los articulos que están relacionados a Salud
 
@@ -67,7 +67,7 @@ Las bases se conectan entre si la variable id (identifica hogar) y miembro (iden
 
 ```{r}
 #un registro por cada artículo adquirido por el hogar y sus miembros
-gastos <- read.table(file ="clase7/engho/engho2018_gastos.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+gastos <- read.table(file ="./engho/engho2018_gastos.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
 
 #names(gastos)
 
@@ -76,7 +76,7 @@ gastos <- read.table(file ="clase7/engho/engho2018_gastos.txt",sep="|", dec=".",
 ```
 ```{r}
 #un registro por hogar: cada hogar se identifica usando "id"
-hogares <- read.table(file ="clase7/engho/engho2018_hogares.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+hogares <- read.table(file ="./engho/engho2018_hogares.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
 
 #names(hogares)
 
@@ -87,7 +87,7 @@ hogares <- read.table(file ="clase7/engho/engho2018_hogares.txt",sep="|", dec=".
 
 ```{r}
 #un registro por persona: cada persona se identifica usando "id" y "miembro"
-personas <- read.table(file ="clase7/engho/engho2018_personas.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+personas <- read.table(file ="./engho/engho2018_personas.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
 
 #names(personas)
 
@@ -219,9 +219,24 @@ La EANNA es una encuesta realizada por el Ministerio de Trabajo, Empleo y Seguri
 library(readr)
 library(tidyverse)
 eanna_urb <- read_delim("./EANNA/EANNA_urbana.csv")
-
 ```
+
+Un análisis que podemos realizar a partir de ella es acerca de las distinciones en el abandono escolar y tipos de trabajo realizado, según género. Para ello, podemos ver cuáles son las preguntas que nos interesan para el análisis [en el manual de uso de la base de datos](https://www.indec.gob.ar/ftp/cuadros/menusuperior/eanna/eanna_urbana_manual_bases.pdf). Esta es una práctica que tenemos que incorporar siempre que trabajemos con bases de datos nuevas.
+
+Podemos destacar algunas variables de interés: 
+
+- `C2_P03` que define el sexo 
+- `C2_P02` tiene la edad 
+- `C3_E01` si asiste actualmente a la escuela/jardín
+- `C3_E16` último año de asistencia escolar 
+- `Diagvenn` indica la combinación de actividades realizadas
+- `PONDERA` como ponderador de las filas
+
+Vamos a filtrar estas variables de interés y recodificarlas.
+
 ```{r}
+#eanna_urb <- eanna_urb %>% select(C2_P03, C2_P02, C3_E01, C3_E16, Diagvenn, PONDERA)
+
 eanna_urb <- eanna_urb %>% mutate(C2_P03 = case_when(
   C2_P03 == 1 ~ "Varón",
   C2_P03 == 2 ~ "Mujer"
@@ -233,21 +248,6 @@ eanna_urb <- eanna_urb %>% mutate(C3_E01 = case_when(
   C3_E01 == 9 ~ "Sin datos"
 ))
 
-eanna_urb <- eanna_urb %>% mutate(C3_E02 = case_when(
-  C3_E01 == 1 ~ "Sí",
-  C3_E01 == 2 ~ "No",
-  C3_E01 == 9 ~ "Sin datos"
-))
-
-eanna_urb <- eanna_urb %>% mutate(C3_E12 = factor(case_when(
-  C3_E12 == 1 ~ "Nivel inicial",
-  C3_E12 == 2 ~ "Nivel básico (primario)",
-  C3_E12 == 3 ~ "Nivel básico (EGB)",
-  C3_E12 == 4 ~ "Nivel medio (secundario)",
-  C3_E12 == 5 ~ "Nivel medio (polimodal)"
-), levels = c("Nivel inicial", "Nivel básico (primario)", "Nivel básico (EGB)",
-              "Nivel medio (secundario)", "Nivel medio (polimodal)")))
-
 eanna_urb <- eanna_urb %>% mutate(Diagvenn = case_when(
   Diagvenn == 1 ~ "Solo trabaja",
   Diagvenn == 2 ~ "Solo realiza actividad para el autoconsumo",
@@ -256,104 +256,197 @@ eanna_urb <- eanna_urb %>% mutate(Diagvenn = case_when(
   Diagvenn == 5 ~ "Trabaja y actividad doméstica",
   Diagvenn == 6 ~ "Realiza autoconsumo y doméstica" ,
   Diagvenn == 7 ~ "Trabaja, autoconsumo y doméstica",
-  Diagvenn == 8 ~ "Resto"
+  Diagvenn == 8 ~ "No trabaja"
 ))
-
-eanna_urb <- eanna_urb %>% mutate(asiste_colegio = case_when(
-  C3_E01 == "No" ~ "No asiste al colegio",
-  C3_E01 == "Sí" ~ "Asiste al colegio",
-  TRUE ~ "Sin datos"))
 
 ```
 
+Ahora, exploremos un poco la base. ¿Cómo es la composición por sexo de los encuestados?
+
+Recuerden que tenemos una variable ponderadora llamada `PONDERA`, así que vamos a hacer la suma sobre esa columna. 
+
 ```{r}
-eanna_urb %>% 
-  ggplot(aes(x=C2_P03))+
-  geom_bar() +
+sexo_cont <- eanna_urb %>% 
+  group_by(C2_P03) %>%
+  summarise(n_pond = sum(PONDERA)) 
+
+sexo_cont %>%
+  ggplot(aes(x=C2_P03, y = n_pond))+
+  geom_col() +
   labs(x = "Sexo",
+       y = "n")+
+  theme_minimal()
+```
+Tenemos 4 millones de niñes para cada sexo, y las clases se encuentran bastante balanceadas. ¿Qué tal las edades? 
+
+```{r}
+edad_cont <- eanna_urb %>% 
+  group_by(C2_P02) %>%
+  summarise(n_pond = sum(PONDERA)) 
+
+edad_cont %>%
+  ggplot(aes(x=C2_P02, y = n_pond))+
+  geom_col() +
+  labs(x = "Edad",
        y = "n")+
   theme_minimal()
 
 ```
 
+Las edades también parecen estar bastante balanceadas. Tenemos unos 600.000 casos en cada una de las categorías. 
+
+Ahora, ¿cómo se distribuye la asistencia escolar según sexo? Podemos verlo con un conteo y un gráfico de barras. 
+
 ```{r}
-eanna_urb %>% 
-  filter(C3_E01 != "Sin datos") %>%
-  ggplot(aes(x=C3_E01, fill = C2_P03))+
-  geom_bar(position = 'dodge') +
-  labs(x = "Asiste a la escuela/jardín",
-       y = "n",
-       fill ="Sexo")+
+
+sexo_escolariz <- eanna_urb %>% group_by(C2_P03, C3_E01) %>%
+                    summarise(n_pond=sum(PONDERA))
+
+sexo_escolariz %>% 
+  ggplot(aes(x=C3_E01, y = n_pond, fill = C2_P03))+
+  geom_col(position = 'dodge') +
   theme_minimal()
 
 ```
-```{r}
-no_escolaridad <- eanna_urb %>% filter(C3_E01 == "No") #No asiste a la escuela/jardín
 
-no_escolaridad %>%
+¡Ups! Tenemos varios casos sin datos que nos generan una barra de NA's. Vamos a borrarlos filtrando antes de hacer el gráfico. 
+
+```{r}
+sexo_escolariz <- sexo_escolariz %>% filter(!is.na(C3_E01))
+
+sexo_escolariz %>% 
+  ggplot(aes(x=C3_E01, y = n_pond, fill = C2_P03))+
+  geom_col(position = 'dodge') +
+  theme_minimal()
+```
+
+Por suerte, la gran mayoría de les niñes asisten a la escuela. Pero, ¿qué pasa con ese pequeño porcentaje que no asiste? Si bien la escala es bastante pequeña, parece que la cantidad  de varones que no asisten al colegio duplica la de mujeres. Veamos cómo se vería este gráfico si hacemos que los valores de la escala crezcan en raíces cuadradas, con `scale_y_sqrt()`. 
+
+```{r}
+sexo_escolariz %>% 
+  ggplot(aes(x=C3_E01, y = n_pond, fill = C2_P03))+
+  geom_col(position = 'dodge') +
+  scale_y_sqrt()+
+  theme_minimal()
+```
+Podemos ver que si bien menos mujeres abandonan el colegio en relación a los varones, no está la brecha que vimos más arriba. 
+Adentrémonos en esta sub-muestra. Vamos a filtrar los casos de niñes que no asisten a la escuela o el jardín. 
+
+```{r}
+no_escolaridad <- eanna_urb %>% filter(C3_E01 == "No") 
+
+ne_sexo <- no_escolaridad %>% group_by(C2_P03) %>%
+  summarise(n_pond = sum(PONDERA))
+
+ne_sexo
+```
+Tenemos más de 81000 niñas que no asisten al colegio contra 146178 niños que no lo hacen, de manera que tenemos un total de `r sum(ne_sexo$n_pond)` niñes que no asisten al colegio. 
+
+¿Cómo se distribuyen las edades al interior de este grupo? 
+
+```{r}
+ne_edades_sexo <- no_escolaridad %>%
   group_by(C2_P03, C3_E16) %>%
-  summarise(n=n())%>%
+  summarise(n=sum(PONDERA))%>%
   mutate(C3_E16 = as.numeric(C3_E16)) %>%
-  filter(C3_E16 < 17) %>%
   group_by(C2_P03)%>%
-  mutate(perc = n/sum(n)*100)%>%
+  mutate(perc = n/sum(n)*100)
+
+ne_edades_sexo %>%
   ggplot(aes(x=as.numeric(C3_E16), y = perc, fill = C2_P03))+
   geom_col(position = 'dodge') +
   labs(x = "Edad de abandono escolar",
        y = "%",
        fill = "Sexo",
-       caption = "Submuestra: 477 casos")+
+       caption = paste0("Submuestra: ", sum(ne_sexo$n_pond), " casos"))+
   theme_minimal()
 
 ```
 
+Como la forma de registrar los NA en esta variable es con el número 99, los ejes nos quedan bastante deformados. Por eso, vamos a recortar el eje x entre las edades de les encuestades: 5 y 17.
+
 ```{r}
-rtas_abandono <-no_escolaridad %>% 
-  group_by(C2_P03)%>%
-  mutate(n_total=n())%>%
-  select(C2_P03, C3_E17_01:C3_E17_13, n_total) %>%
-  pivot_longer(cols = -c(C2_P03, n_total), names_to = "motivo", values_to = "rta") %>%
+ne_edades_sexo %>%
+  ggplot(aes(x=as.numeric(C3_E16), y = perc, fill = C2_P03))+
+  geom_col(position = 'dodge') +
+  xlim(5, 17)+
+  labs(x = "Edad de abandono escolar",
+       y = "%",
+       fill = "Sexo",
+       caption = paste0("Submuestra: ", sum(ne_sexo$n_pond), " casos"))+
+  theme_minimal()
+
+```
+
+Vemos que de manera indistinta al género, la mayoría de les niñes que abandonan el colegio lo hacen entre los 14 y los 16 años. Ahora, ¿por qué motivos lo hacen? 
+
+Para esto nos son útiles las variables desde la `C3_E17_01` a la `C3_E17_10`. Cada una de ellas representa una respuesta a una pregunta de opción múltiple: el o los motivo/s por el cual el encuestado o encuestada dejó el colegio. Vamos a tener que recodificar estas variables para hacer un conteo de respuestas positivas sobre estas variables, así que vamos paso a paso. 
+
+Primero, creamos un objeto llamado `rtas_abandono` donde guardaremos la cantidad de varones y mujeres, y vamos a pivotear las columnas de interés. 
+
+```{r}
+rtas_abandono <- no_escolaridad %>% 
+  group_by(C2_P03, PONDERA)%>%
+#  mutate(n_pond=sum(PONDERA))%>%
+  select(C2_P03, C3_E17_01:C3_E17_13, PONDERA) %>%
+  pivot_longer(cols = -c(C2_P03, PONDERA), names_to = "motivo", values_to = "rta") %>%
   mutate(motivo = case_when(
-      motivo == "C3_E17_01" | motivo == "C3_E17_03" | motivo == "C3_E17_08" | motivo == "C3_E17_11"~ "Desinterés/desaliento/dificultad", #Desinterés/desaliento/dificultad
-      motivo == "C3_E17_02" | motivo == "C3_E17_04"  | motivo == "C3_E17_06" | motivo == "C3_E17_12" ~ "Problemas de oferta", #Problemas de oferta
+      motivo == "C3_E17_01" | motivo == "C3_E17_03" | motivo == "C3_E17_08" | motivo == "C3_E17_11"~ "Desinterés/desaliento/dificultad", 
+      motivo == "C3_E17_02" | motivo == "C3_E17_04"  | motivo == "C3_E17_06" | motivo == "C3_E17_12" ~ "Problemas de oferta",
       motivo == "C3_E17_05" ~ "Problemas económicos", 
       motivo == "C3_E17_07" ~ "Decisión de los padres", 
       motivo == "C3_E17_09" | motivo == "C3_E17_13" ~ "Tareas de cuidado", #Tareas de cuidado
       motivo == "C3_E17_10" ~ "Necesitaba/quería trabajar"
-          ),
-      rta = case_when(
-        rta == "1" ~ 1,
-        rta == "2" ~ 0,
-        TRUE ~ 9
-      )) 
+          ))
 
-rtas_abandono %>% group_by(C2_P03, n_total, motivo) %>%
-  filter(rta < 9) %>%
-  summarise(n=sum(as.numeric(rta))) %>%
-  filter(n>0) %>% 
-  mutate(perc = n/n_total*100) %>%
+rtas_abandono
+```
+
+¿Para qué nos sirve esto? Por ahora, el 2 en la variable  `rta` nos dice que les encuestades contestaron "Sí" a ese motivo y un 1 significa que contestaron "No". Así, podemos recodificar las variables desde una sola columna y hacer un conteo ponderado de las respuestas afirmativas.   
+
+```{r}
+rtas_abandono <- rtas_abandono %>% mutate(rta = case_when(
+      rta == "1" ~ "Sí",
+      rta == "2" ~ "No",
+      TRUE ~ "NR"
+    )) 
+
+rtas_abandono <- rtas_abandono %>% filter(rta != "No") %>%
+  group_by(C2_P03, motivo) %>% 
+  summarise(rtas = sum(PONDERA)) %>%
+  ungroup()%>%
+  group_by(C2_P03)%>%
+  mutate(perc = (rtas/sum(rtas))*100)
+
+rtas_abandono
+```
+
+Ahora sí, lo podemos graficar:
+
+```{r}
+rtas_abandono %>%
   ggplot(aes(x=motivo, y = perc, fill = C2_P03))+
   geom_col(position = 'dodge') +
   labs(x = "Motivo de abandono",
        y = "%",
        fill = "Sexo",
-       caption = "Submuestra: 154 casos")+
+       caption = paste0("Submuestra: ", sum(rtas_abandono$rtas)," casos"))+
   theme_minimal()+ 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 ```
+
+Podemos ver diferencias sustanciales entre el sexo asignado al nacer y los motivos de abandono escolar. En principio, los varones varones dejan el colegio para trabajar en tareas productivas un 12% más que las mujeres. Por otro lado, podemos ver que el 25% de las mujeres que contestaron sobre sus motivaciones para abandonar el colegio lo hicieron por tener que dedicarse a tareas de cuidado.
+
+¿Cómo se ve esto en las actividades que realizan estes niñes? Grafiquemos la distribución de la variable `Diagvenn` por sexo. 
 ```{r}
 
-eanna_urb %>% group_by(C2_P03, asiste_colegio, Diagvenn) %>%
-  summarize(n=n())%>%
-  filter(Diagvenn != "Resto")%>%
-  ungroup()%>%
-  group_by(C2_P03, asiste_colegio) %>%
+eanna_urb %>% group_by(C2_P03, Diagvenn) %>%
+  summarize(n=sum(PONDERA))%>%
+  #filter(Diagvenn != "Resto")%>%
   mutate(perc = n/sum(n)*100)%>% 
-  filter(Diagvenn != "Resto")%>%
   ggplot(aes(x=Diagvenn, y=perc, fill = C2_P03))+
   geom_col(position = 'dodge')+
-  facet_wrap(vars(asiste_colegio))+
   coord_flip()+
   labs(x = "Tipo de trabajo",
        y = "%",
@@ -362,3 +455,21 @@ eanna_urb %>% group_by(C2_P03, asiste_colegio, Diagvenn) %>%
 
 ```
 
+Como (por suerte) la gran mayoría de les niñes no trabajan, o por lo menos no está registrado de manera formal, no podemos ver cómo se distribuyen los casos entre quienes sí realizan algún tipo de actividad económica. Vamos a filtrarlo para ver bien esta distinción. 
+
+```{r}
+eanna_urb %>% group_by(C2_P03, Diagvenn) %>%
+  summarize(n=sum(PONDERA))%>%
+  filter(Diagvenn != "No trabaja")%>%
+  mutate(perc = n/sum(n)*100)%>% 
+  ggplot(aes(x=Diagvenn, y=perc, fill = C2_P03))+
+  geom_col(position = 'dodge')+
+  coord_flip()+
+  labs(x = "Tipo de trabajo",
+       y = "%",
+       fill = "Sexo")+
+  theme_minimal()
+
+```
+
+Podemos ver que más del 50% de las niñas se dedican a realizar actividades domésticas. Entre los varones, más del 40% se dedica sólo a realizar trabajo para el mercado. Visibilizar estos datos resulta sumamente importante para mostrar cómo la feminización de las tareas de cuidado es una construcción social que se edifica desde las infancias. 
