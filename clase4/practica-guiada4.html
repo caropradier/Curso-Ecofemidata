@@ -1511,7 +1511,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Clase 4 - Tidyverse</h1>
 <h4 class="author">Carolina Pradier y Laia Domenech Burin</h4>
-<h4 class="date">16 junio, 2022</h4>
+<h4 class="date">17 agosto, 2022</h4>
 
 </div>
 
@@ -1538,17 +1538,32 @@ para trabajar con formatos de fecha.</p>
 programa nacional de producción sistemática y permanente de indicadores
 sociales que lleva a cabo el Instituto Nacional de Estadística y Censos
 (INDEC), que permite conocer las características sociodemográficas y
-socioeconómicas de la población (se publican sus datos
-trimestralmente).</p>
-<p>Las variables de la EPH están codificadas, voy a reemplazar los
-códigos por su significado mirando el <em>diseño de registro</em> de la
-base.</p>
-<pre class="r"><code> base &lt;- eph::get_microdata(year = 2019, #definimos el año
+socioeconómicas de la población (se publican sus datos trimestralmente).
+Se trata de la base de datos que usamos desde Ecofemidata para elaborar
+el informe <a href="https://ecofeminita.com/ecofemidata" title="Ecofemidata">La desigualdad de género se puede medir.</a></p>
+<p>Para descargar la base de microdatos vamos a utilizar la librería
+<strong>eph</strong>, que tiene por objecto facilitar el trabajo de
+aquellos usuarios y usuarias de la Encuesta Permanente de Hogares -
+INDEC que deseen procesar datos de la misma mediante el lenguaje de
+programación R. La función <em>get_microdata</em> descarga bases de la
+Encuesta Permanente de Hogares a partir de 1996.</p>
+<p>La estructura librería::función (la usamos en el caso de
+<em>eph::get_microdata()</em>) es útil para indicarnos de qué librería
+proviene una función (por ejemplo, en caso de que dos librerías
+distintas tengan funciones con un mismo nombre).</p>
+<pre class="r"><code>base &lt;- eph::get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
                             type = &quot;individual&quot;, #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                            destfile = &quot;clase4/eph_2019_T1.rds&quot;) %&gt;%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+                            destfile = &quot;clase4/eph_2019_T1.rds&quot;)  #definimos dónde se va a guardar la base. 
+#De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base</code></pre>
+<p>Las variables de la EPH están codificadas, vamos a reemplazar los
+códigos por su significado mirando el <em>diseño de registro</em> de la
+base.</p>
+<pre class="r"><code>base &lt;- base %&gt;%  
+  #seleccionamos las variables que vamos a necesitar
   select(ESTADO,CAT_OCUP,&quot;SEXO&quot; = CH04, PONDERA) %&gt;% 
   
+  #reemplazamos los códigos por su significado
   mutate(ESTADO = case_when(ESTADO == 1 ~ &quot;Ocupado&quot;,
                             ESTADO == 2 ~ &quot;Desocupado&quot;,
                             ESTADO == 3 ~ &quot;Inactivo&quot;,
@@ -1569,43 +1584,48 @@ base.</p>
 datos, generalmente vamos a utilizar conjuntamente las funciones
 <strong>group_by()</strong> y <strong>summarise()</strong>:</p>
 <ul>
-<li><p><em>group_by()</em> cambia la unidad de análsis del dataset a
+<li><p><em>group_by()</em> cambia la unidad de análisis del dataset a
 grupos de filas definidos de acuerdo con las categorías de alguna
-variable (por ejemplo, si agrupamos según la variable sexo, se separará
+variable (por ejemplo, si agrupamos según la variable SEXO, se separará
 a la base de datos en dos conjuntos de filas: aquellos identificados con
-sexo == Mujeres y aquellos identificados como sexo == varón). De este
-modo, las operaciones que apliquemos sobre la base agrupada se aplicarán
-separadamente sobre cada uno de estos grupos.</p></li>
+SEXO == “Mujeres” y aquellos identificados como SEXO == “Varones”). De
+este modo, las operaciones que apliquemos sobre la base agrupada se
+aplicarán separadamente sobre cada uno de estos grupos.</p></li>
 <li><p><em>summarise()</em> crea una tabla nueva donde se resume
 información acerca del dataframe original. La cantidad de filas de la
 nueva tabla será igual a la cantidad de grupos que hayamos definido (en
 caso de no agrupar, vamos a tener un único grupo, que es el conjunto de
-todas las filas). La cantidad de columnas de la tabla será igual a la
-suma de la cantidad de variables por las que agrupamos y la cantidad de
-medidas de resumen que queramos calcular (por ejemplo, podríamos querer
-conocer la cantidad de observaciones en cada grupo, el ingreso máximo de
-los miembros de cada grupo, y su ingreso medio -en este caso, tendríamos
-3 columnas-).</p></li>
+todas las filas). La cantidad de columnas de la tabla variará según la
+cantidad de variables por las que agrupamos y la cantidad de medidas de
+resumen que queramos calcular (por ejemplo, si quisiéramos conocer la
+cantidad de observaciones en cada grupo, el ingreso máximo de los
+miembros de cada grupo, y su ingreso medio, tendríamos 3
+columnas).</p></li>
 </ul>
 <div id="summarise-o-mutate" class="section level2">
 <h2>¿summarise() o mutate()?</h2>
 <p>Veamos un caso:</p>
 <pre class="r"><code>unique(base$SEXO)</code></pre>
 <pre><code>## [1] &quot;Mujeres&quot; &quot;Varones&quot;</code></pre>
-<pre class="r"><code>base %&gt;%
-    group_by(SEXO) %&gt;%
-    summarise(Desocupados = sum(PONDERA[ESTADO == &quot;Desocupado&quot;], na.rm = TRUE), PEA = sum(PONDERA[ESTADO ==
-        &quot;Desocupado&quot; | ESTADO == &quot;Ocupado&quot;], na.rm = TRUE), `Tasa de desocupación` = round((Desocupados/PEA) *
-        100, 1))</code></pre>
+<pre class="r"><code>base %&gt;% 
+  group_by(SEXO) %&gt;% 
+  summarise(Desocupados = sum(PONDERA[ESTADO == &quot;Desocupado&quot;], na.rm = TRUE),
+            PEA = sum(PONDERA[ESTADO == &quot;Desocupado&quot;| ESTADO == &quot;Ocupado&quot;], na.rm = TRUE),
+            &quot;Tasa de desocupación&quot; = round( (Desocupados/PEA)*100 ,1)) </code></pre>
 <pre><code>## # A tibble: 2 x 4
 ##   SEXO    Desocupados     PEA `Tasa de desocupación`
 ##   &lt;chr&gt;         &lt;int&gt;   &lt;int&gt;                  &lt;dbl&gt;
 ## 1 Mujeres      651850 5807501                   11.2
 ## 2 Varones      686263 7477929                    9.2</code></pre>
-<p>En este caso, para estudiar la cantidad de casos correspondientes a
-cada combinación, recurro a la variable PONDERA, debido a que la base
-que estoy utilizando es una encuesta, cuyos ponderadores permiten
-representar a la población total.</p>
+<pre class="r"><code>#El parámetro na.rm de la función sum() indica que, en caso de presentarse valores faltantes, se ignoren para la suma. Si esto no se aclara, en caso de presentarse un valor faltante, la función devuelve NA.
+#La función round() nos permite redondear un número a la cantidad de decimales que especifiquemos (en este caso, redondeamos el resultado de (Desocupados/PEA)*100 a 1 decimal).</code></pre>
+<p>Como la encuesta entrevista a una muestra de hogares o individuos que
+no son directamente la población total de la que se quiere hablar (como
+se hace por ejemplo en un Censo), la EPH nos dice con la variable
+PONDERA a cuánta gente representa cada observación, cada sujeto
+encuestado. Entonces, cuando queremos estimar cantidades, en lugar de
+simplemente contar filas, sumamos los PONDERA (de acuerdo a la condición
+aclarada entre corchetes)</p>
 <p>La tabla que obtenemos tiene 2 filas (las categorías de sexo) y
 cuatro columnas: una en la que aparece la variable que agrupa y tres
 donde aparecen las medidas de resumen que nos interesaba calcular. Lo
@@ -1613,11 +1633,11 @@ que puede observarse en la tabla es que la tasa de desocupación es mayor
 para las mujeres.</p>
 <p>¿Qué pasa si en lugar de <em>summarise()</em> utilizábamos
 <em>mutate()</em>?</p>
-<pre class="r"><code>base %&gt;%
-    group_by(SEXO) %&gt;%
-    mutate(Desocupados = sum(PONDERA[ESTADO == &quot;Desocupado&quot;], na.rm = TRUE), PEA = sum(PONDERA[ESTADO ==
-        &quot;Desocupado&quot; | ESTADO == &quot;Ocupado&quot;], na.rm = TRUE), `Tasa de desocupación` = round((Desocupados/PEA) *
-        100, 1))</code></pre>
+<pre class="r"><code>base %&gt;% 
+  group_by(SEXO) %&gt;% 
+  mutate(Desocupados = sum(PONDERA[ESTADO == &quot;Desocupado&quot;], na.rm = TRUE),
+          PEA = sum(PONDERA[ESTADO == &quot;Desocupado&quot;| ESTADO == &quot;Ocupado&quot;], na.rm = TRUE),
+          &quot;Tasa de desocupación&quot; = round((Desocupados/PEA)*100,1)) </code></pre>
 <pre><code>## # A tibble: 59,369 x 7
 ## # Groups:   SEXO [2]
 ##    ESTADO           CAT_OCUP   SEXO  PONDERA Desocupados    PEA `Tasa de desoc~`
@@ -1636,7 +1656,10 @@ para las mujeres.</p>
 <p>Obtenemos una tabla igual a la original, pero esta vez en cada fila
 correspondiente a las mujeres aparece la medida de resumen que le
 corresponde a ese grupo, y lo mismo para las filas correspondientes a
-varones.</p>
+varones. Es decir, mutate() no colapsa la información según los grupos
+definidos, sino que mantiene la misma cantidad de filas originales e
+imprime para cada caso la medida de resumen correspondiente al grupo al
+que pertenece cada observación.</p>
 </div>
 <div id="múltiples-argumentos-en-group_by" class="section level2">
 <h2>Múltiples argumentos en group_by()</h2>
@@ -1713,11 +1736,11 @@ variables</p></li>
 variables</p></li>
 </ul>
 <p>Veamos un ejemplo:</p>
-<pre class="r"><code>base %&gt;%
-    filter(!is.na(ESTADO)) %&gt;%
-    group_by(SEXO, ESTADO) %&gt;%
-    summarise(Casos = sum(PONDERA)) %&gt;%
-    pivot_wider(., id_cols = SEXO, names_from = ESTADO, values_from = Casos)</code></pre>
+<pre class="r"><code>base %&gt;% 
+  filter(!is.na(ESTADO)) %&gt;% 
+  group_by(SEXO, ESTADO) %&gt;% 
+  summarise(Casos = sum(PONDERA)) %&gt;% 
+  pivot_wider(.,id_cols=SEXO,names_from=ESTADO,values_from = Casos)</code></pre>
 <pre><code>## # A tibble: 2 x 5
 ## # Groups:   SEXO [2]
 ##   SEXO    Desocupado Inactivo `Menor de 10 años` Ocupado
@@ -1737,13 +1760,12 @@ variables elegidas</p></li>
 valores de las variables</p></li>
 </ul>
 <p>Revertimos la operación del ejemplo anterior:</p>
-<pre class="r"><code>base %&gt;%
-    filter(!is.na(ESTADO)) %&gt;%
-    group_by(SEXO, ESTADO) %&gt;%
-    summarise(Casos = sum(PONDERA)) %&gt;%
-    pivot_wider(., id_cols = SEXO, names_from = ESTADO, values_from = Casos) %&gt;%
-    pivot_longer(., cols = c(&quot;Desocupado&quot;, &quot;Inactivo&quot;, &quot;Menor de 10 años&quot;, &quot;Ocupado&quot;),
-        names_to = &quot;ESTADO&quot;, values_to = &quot;Casos&quot;)</code></pre>
+<pre class="r"><code>base %&gt;% 
+  filter(!is.na(ESTADO)) %&gt;%
+  group_by(SEXO, ESTADO) %&gt;% 
+  summarise(Casos = sum(PONDERA)) %&gt;% 
+  pivot_wider(.,id_cols=SEXO,names_from=ESTADO,values_from = Casos) %&gt;% 
+  pivot_longer(.,cols = c(&quot;Desocupado&quot;, &quot;Inactivo&quot;,&quot;Menor de 10 años&quot;, &quot;Ocupado&quot;), names_to = &quot;ESTADO&quot;, values_to = &quot;Casos&quot;)</code></pre>
 <pre><code>## # A tibble: 8 x 3
 ## # Groups:   SEXO [2]
 ##   SEXO    ESTADO             Casos
@@ -1818,12 +1840,12 @@ varones y mujeres?</p>
                           DESC_JUBILATORIO == 2 ~ &quot;No tiene descuento jubilatorio&quot;))</code></pre>
 <p>Para responder esta pregunta, primero vamos a calcular normalmente la
 tasa de actividad en nuestra tabla 1:</p>
-<pre class="r"><code>tabla_1 &lt;- base %&gt;%
-    group_by(SEXO) %&gt;%
-    summarise(PEA = sum(PONDERA[ESTADO == &quot;Desocupado&quot; | ESTADO == &quot;Ocupado&quot;], na.rm = TRUE),
-        Poblacion = sum(PONDERA), `Tasa de actividad` = round((PEA/Poblacion) * 100,
-            1)) %&gt;%
-    select(-PEA, -Poblacion)
+<pre class="r"><code>tabla_1 &lt;- base %&gt;% 
+  group_by(SEXO) %&gt;% 
+  summarise(PEA = sum(PONDERA[ESTADO == &quot;Desocupado&quot;| ESTADO == &quot;Ocupado&quot;], na.rm = TRUE),
+            Poblacion = sum(PONDERA),
+            &quot;Tasa de actividad&quot; = round((PEA/Poblacion)*100,1)) %&gt;% 
+  select(-PEA,-Poblacion) 
 
 head(tabla_1)</code></pre>
 <pre><code>## # A tibble: 2 x 2
@@ -1833,14 +1855,14 @@ head(tabla_1)</code></pre>
 ## 2 Varones                54.7</code></pre>
 <p>Luego, vamos a calcularla clasificando a las amas de casa como parte
 de la población económicamente activa en nuestra tabla 2:</p>
-<pre class="r"><code>tabla_2 &lt;- base %&gt;%
-    mutate(ESTADO_corregido = case_when(ESTADO == &quot;Inactivo&quot; &amp; CAT_INAC == &quot;Ama de casa&quot; ~
-        &quot;Ocupado&quot;, TRUE ~ paste0(ESTADO))) %&gt;%
-    group_by(SEXO) %&gt;%
-    summarise(PEA = sum(PONDERA[ESTADO_corregido == &quot;Desocupado&quot; | ESTADO_corregido ==
-        &quot;Ocupado&quot;], na.rm = TRUE), Poblacion = sum(PONDERA), `Tasa de actividad corregida` = round((PEA/Poblacion) *
-        100, 1)) %&gt;%
-    select(-PEA, -Poblacion)
+<pre class="r"><code>tabla_2 &lt;- base %&gt;% 
+  mutate(ESTADO_corregido = case_when(ESTADO == &quot;Inactivo&quot; &amp; CAT_INAC == &quot;Ama de casa&quot; ~ &quot;Ocupado&quot;,
+                                      TRUE ~ paste0(ESTADO))) %&gt;% 
+  group_by(SEXO) %&gt;% 
+  summarise(PEA = sum(PONDERA[ESTADO_corregido == &quot;Desocupado&quot;| ESTADO_corregido == &quot;Ocupado&quot;], na.rm = TRUE),
+            Poblacion = sum(PONDERA),
+            &quot;Tasa de actividad corregida&quot; = round((PEA/Poblacion)*100,1)) %&gt;% 
+  select(-PEA,-Poblacion) 
 
 head(tabla_2)</code></pre>
 <pre><code>## # A tibble: 2 x 2
@@ -1849,8 +1871,8 @@ head(tabla_2)</code></pre>
 ## 1 Mujeres                          51.4
 ## 2 Varones                          56.1</code></pre>
 <p>Ahora, vamos a unir las tablas y calcular la diferencia:</p>
-<pre class="r"><code>inner_join(tabla_1, tabla_2, by = &quot;SEXO&quot;) %&gt;%
-    mutate(Diferencia = `Tasa de actividad corregida` - `Tasa de actividad`)</code></pre>
+<pre class="r"><code>inner_join(tabla_1,tabla_2,by = &quot;SEXO&quot;) %&gt;% 
+  mutate(Diferencia = `Tasa de actividad corregida` - `Tasa de actividad`)</code></pre>
 <pre><code>## # A tibble: 2 x 4
 ##   SEXO    `Tasa de actividad` `Tasa de actividad corregida` Diferencia
 ##   &lt;chr&gt;                 &lt;dbl&gt;                         &lt;dbl&gt;      &lt;dbl&gt;
@@ -1871,15 +1893,15 @@ identificarse en cada categoría ocupacional? (tabla 1)</p>
 <p>Entre quienes se encuentran en relación de dependencia, ¿la
 proporción de personas con descuento jubilatorio es la misma? (tabla
 2)</p>
-<pre class="r"><code>tabla_1 &lt;- base %&gt;%
-    filter(ESTADO == &quot;Ocupado&quot;) %&gt;%
-    group_by(SEXO, CAT_OCUP) %&gt;%
-    summarise(Casos = sum(PONDERA)) %&gt;%
-    ungroup() %&gt;%
-    group_by(SEXO) %&gt;%
-    mutate(Total = sum(Casos), `Frecuencia relativa` = round((Casos/Total) * 100,
-        1)) %&gt;%
-    select(-Casos, -Total)
+<pre class="r"><code>tabla_1 &lt;-  base %&gt;% 
+  filter(ESTADO == &quot;Ocupado&quot;) %&gt;% 
+  group_by(SEXO, CAT_OCUP) %&gt;% 
+  summarise(Casos = sum(PONDERA)) %&gt;% 
+  ungroup() %&gt;% 
+  group_by(SEXO) %&gt;% 
+  mutate(Total = sum(Casos),
+         &quot;Frecuencia relativa&quot; = round((Casos/Total)*100,1)) %&gt;% 
+  select(-Casos, -Total)
 
 head(tabla_1)</code></pre>
 <pre><code>## # A tibble: 6 x 3
@@ -1892,16 +1914,16 @@ head(tabla_1)</code></pre>
 ## 4 Mujeres TFSR                            0.9
 ## 5 Varones Cuenta propia                  22.8
 ## 6 Varones Empleado                       72.3</code></pre>
-<pre class="r"><code>tabla_2 &lt;- base %&gt;%
-    filter(ESTADO == &quot;Ocupado&quot; &amp; CAT_OCUP == &quot;Empleado&quot;) %&gt;%
-    group_by(SEXO, CAT_OCUP, DESC_JUBILATORIO) %&gt;%
-    summarise(Casos = sum(PONDERA)) %&gt;%
-    ungroup() %&gt;%
-    group_by(SEXO, CAT_OCUP) %&gt;%
-    mutate(Total = sum(Casos), `Frecuencia relativa` = round((Casos/Total) * 100,
-        1)) %&gt;%
-    select(-Casos, -Total) %&gt;%
-    pivot_wider(., id_cols = c(SEXO, CAT_OCUP), names_from = DESC_JUBILATORIO, values_from = &quot;Frecuencia relativa&quot;)
+<pre class="r"><code>tabla_2 &lt;- base %&gt;% 
+  filter(ESTADO == &quot;Ocupado&quot; &amp; CAT_OCUP == &quot;Empleado&quot;) %&gt;% 
+  group_by(SEXO, CAT_OCUP, DESC_JUBILATORIO) %&gt;% 
+  summarise(Casos = sum(PONDERA)) %&gt;% 
+  ungroup() %&gt;% 
+  group_by(SEXO, CAT_OCUP) %&gt;% 
+  mutate(Total = sum(Casos),
+         &quot;Frecuencia relativa&quot; = round((Casos/Total)*100,1)) %&gt;% 
+  select(-Casos, -Total) %&gt;% 
+  pivot_wider(.,id_cols = c(SEXO, CAT_OCUP), names_from = DESC_JUBILATORIO, values_from = &quot;Frecuencia relativa&quot;)
 
 head(tabla_2)</code></pre>
 <pre><code>## # A tibble: 2 x 4
@@ -1916,7 +1938,7 @@ formas:</p>
 <li>O bien agregando la información respecto al descuento jubilatorio a
 la distribución por categoría ocupacional:</li>
 </ul>
-<pre class="r"><code>left_join(tabla_1, tabla_2, by = c(&quot;SEXO&quot;, &quot;CAT_OCUP&quot;))</code></pre>
+<pre class="r"><code>left_join(tabla_1,tabla_2, by = c(&quot;SEXO&quot;,&quot;CAT_OCUP&quot;))</code></pre>
 <pre><code>## # A tibble: 8 x 5
 ## # Groups:   SEXO [2]
 ##   SEXO    CAT_OCUP      `Frecuencia relativa` `No tiene descu~` `Tiene descuen~`
@@ -1938,7 +1960,7 @@ dependencia, pero manteniendo el dato que da cuenta de la proporción de
 la población ocupada total que representan las personas que se insertan
 laboralmente de esta forma:</li>
 </ul>
-<pre class="r"><code>right_join(tabla_1, tabla_2, by = c(&quot;SEXO&quot;, &quot;CAT_OCUP&quot;))</code></pre>
+<pre class="r"><code>right_join(tabla_1,tabla_2, by = c(&quot;SEXO&quot;,&quot;CAT_OCUP&quot;))</code></pre>
 <pre><code>## # A tibble: 2 x 5
 ## # Groups:   SEXO [2]
 ##   SEXO    CAT_OCUP `Frecuencia relativa` `No tiene descuento ~` `Tiene descuen~`
@@ -1954,15 +1976,15 @@ hay otro 20-30% de la población que no estamos teniendo en cuenta.</p>
 unir bases.</p>
 <p>Imaginemos que en el cálculo de la tabla 2 generábamos la siguiente
 tabla (sin pivot!):</p>
-<pre class="r"><code>tabla_2 &lt;- base %&gt;%
-    filter(ESTADO == &quot;Ocupado&quot; &amp; CAT_OCUP == &quot;Empleado&quot;) %&gt;%
-    group_by(SEXO, CAT_OCUP, DESC_JUBILATORIO) %&gt;%
-    summarise(Casos = sum(PONDERA)) %&gt;%
-    ungroup() %&gt;%
-    group_by(SEXO, CAT_OCUP) %&gt;%
-    mutate(Total = sum(Casos), `Frecuencia relativa` = round((Casos/Total) * 100,
-        1)) %&gt;%
-    select(-Casos, -Total)
+<pre class="r"><code>tabla_2 &lt;- base %&gt;% 
+  filter(ESTADO == &quot;Ocupado&quot; &amp; CAT_OCUP == &quot;Empleado&quot;) %&gt;% 
+  group_by(SEXO, CAT_OCUP, DESC_JUBILATORIO) %&gt;% 
+  summarise(Casos = sum(PONDERA)) %&gt;% 
+  ungroup() %&gt;% 
+  group_by(SEXO, CAT_OCUP) %&gt;% 
+  mutate(Total = sum(Casos),
+         &quot;Frecuencia relativa&quot; = round((Casos/Total)*100,1)) %&gt;% 
+  select(-Casos, -Total) 
 
 head(tabla_2)</code></pre>
 <pre><code>## # A tibble: 4 x 4
@@ -1974,7 +1996,7 @@ head(tabla_2)</code></pre>
 ## 3 Varones Empleado No tiene descuento jubilatorio                  32.5
 ## 4 Varones Empleado Tiene descuento jubilatorio                     67.5</code></pre>
 <p>Y luego aplicábamos la misma unión:</p>
-<pre class="r"><code>left_join(tabla_1, tabla_2, by = c(&quot;SEXO&quot;, &quot;CAT_OCUP&quot;))</code></pre>
+<pre class="r"><code>left_join(tabla_1,tabla_2, by = c(&quot;SEXO&quot;,&quot;CAT_OCUP&quot;))</code></pre>
 <pre><code>## # A tibble: 10 x 5
 ## # Groups:   SEXO [2]
 ##    SEXO    CAT_OCUP      `Frecuencia relativ~` DESC_JUBILATORIO `Frecuencia re~`
@@ -2001,8 +2023,8 @@ generar un objeto que tiene sentido?).</p>
 <p>Una de las herramientas que pueden ayudarnos es la función
 <strong>unique()</strong>, que al aplicarse a un objeto (vector,
 dataframe, etc.) nos lo devuelve sin duplicaciones. Por ejemplo:</p>
-<pre class="r"><code>left_join(tabla_1, tabla_2, by = c(&quot;SEXO&quot;, &quot;CAT_OCUP&quot;)) %&gt;%
-    select(&quot;SEXO&quot;, &quot;CAT_OCUP&quot;)</code></pre>
+<pre class="r"><code>left_join(tabla_1,tabla_2, by = c(&quot;SEXO&quot;,&quot;CAT_OCUP&quot;)) %&gt;% 
+  select(&quot;SEXO&quot;,&quot;CAT_OCUP&quot;)</code></pre>
 <pre><code>## # A tibble: 10 x 2
 ## # Groups:   SEXO [2]
 ##    SEXO    CAT_OCUP     
@@ -2017,9 +2039,9 @@ dataframe, etc.) nos lo devuelve sin duplicaciones. Por ejemplo:</p>
 ##  8 Varones Empleado     
 ##  9 Varones Patrón       
 ## 10 Varones TFSR</code></pre>
-<pre class="r"><code>left_join(tabla_1, tabla_2, by = c(&quot;SEXO&quot;, &quot;CAT_OCUP&quot;)) %&gt;%
-    select(&quot;SEXO&quot;, &quot;CAT_OCUP&quot;) %&gt;%
-    unique()</code></pre>
+<pre class="r"><code>left_join(tabla_1,tabla_2, by = c(&quot;SEXO&quot;,&quot;CAT_OCUP&quot;)) %&gt;% 
+  select(&quot;SEXO&quot;,&quot;CAT_OCUP&quot;) %&gt;% 
+  unique()</code></pre>
 <pre><code>## # A tibble: 8 x 2
 ## # Groups:   SEXO [2]
 ##   SEXO    CAT_OCUP     
@@ -2083,7 +2105,7 @@ fecha_2</code></pre>
 parse_date_time():</p>
 <pre class="r"><code>fecha_3 &lt;- c(&quot;Oct 1980 4&quot;, &quot;May 1980 20&quot;, &quot;Feb 1980 15&quot;)
 
-fecha_3 &lt;- parse_date_time(fecha_3, orders = &quot;myd&quot;)
+fecha_3 &lt;-parse_date_time(fecha_3, orders = &quot;myd&quot;)
 
 fecha_3</code></pre>
 <pre><code>## [1] &quot;1980-10-04 UTC&quot; &quot;1980-05-20 UTC&quot; &quot;1980-02-15 UTC&quot;</code></pre>
@@ -2091,7 +2113,7 @@ fecha_3</code></pre>
 <div id="operaciones-con-fechas" class="section level3">
 <h3>Operaciones con fechas</h3>
 <p>Podemos calcular la cantidad de tiempo que pasó entre dos fechas:</p>
-<pre class="r"><code>fecha_3[1] - fecha_3[2]</code></pre>
+<pre class="r"><code>fecha_3[1] - fecha_3[2] </code></pre>
 <pre><code>## Time difference of 137 days</code></pre>
 <p>¿Cuántos segundos hay en 5 semanas?</p>
 <pre class="r"><code>p_5_semanas &lt;- period(5, units = &quot;weeks&quot;)
@@ -2100,7 +2122,7 @@ period_to_seconds(p_5_semanas)</code></pre>
 <pre><code>## [1] 3024000</code></pre>
 <p>En 5 semanas, ¿qué día es?</p>
 <pre class="r"><code>now() + p_5_semanas</code></pre>
-<pre><code>## [1] &quot;2022-07-21 15:29:05 -03&quot;</code></pre>
+<pre><code>## [1] &quot;2022-09-21 13:44:24 -03&quot;</code></pre>
 <p>Podemos agregarle días, meses, o años a una fecha:</p>
 <pre class="r"><code>fecha_2</code></pre>
 <pre><code>## [1] &quot;2020-08-04 13:40:43 UTC&quot;</code></pre>
@@ -2113,10 +2135,10 @@ period_to_seconds(p_5_semanas)</code></pre>
 <h3>Extraer información de fechas</h3>
 <p>A veces, queremos extraer algún elemento de la fecha para procesar a
 información.</p>
-<pre class="r"><code># Número
+<pre class="r"><code>#Número
 month(fecha_2)</code></pre>
 <pre><code>## [1] 8</code></pre>
-<pre class="r"><code># O nombre
+<pre class="r"><code>#O nombre
 month(fecha_2, label = T)</code></pre>
 <pre><code>## [1] ago
 ## 12 Levels: ene &lt; feb &lt; mar &lt; abr &lt; may &lt; jun &lt; jul &lt; ago &lt; sep &lt; ... &lt; dic</code></pre>
@@ -2128,13 +2150,13 @@ Humanos de la Línea 137 - víctimas de violencia familiar - llamados e
 intervenciones domiciliarias. Cada fila del registro es un caso.</p>
 <pre class="r"><code>library(readxl)
 
-llamados_atendidos_violencia_familiar_202202 &lt;- read_excel(&quot;clase4/llamados-atendidos-violencia-familiar-202202.xlsx&quot;)</code></pre>
+llamados_atendidos_violencia_familiar_202202 &lt;- read_excel(&quot;clase4/llamados-atendidos-violencia-familiar-202202.xlsx&quot;) </code></pre>
 <p>¿En qué día de la semana se llama más?</p>
-<pre class="r"><code>llamados_atendidos_violencia_familiar_202202 %&gt;%
-    mutate(dia = wday(llamado_fecha, label = T)) %&gt;%
-    group_by(dia) %&gt;%
-    summarise(Casos = n()) %&gt;%
-    arrange(-Casos)</code></pre>
+<pre class="r"><code>llamados_atendidos_violencia_familiar_202202 %&gt;% 
+  mutate(dia = wday(llamado_fecha, label = T)) %&gt;% 
+  group_by(dia) %&gt;% 
+  summarise(Casos = n()) %&gt;% 
+  arrange(-Casos)</code></pre>
 <pre><code>## # A tibble: 7 x 2
 ##   dia      Casos
 ##   &lt;ord&gt;    &lt;int&gt;
@@ -2159,7 +2181,9 @@ exportar a excel nuestros resultados.</p>
 <p>Para guardar varios elementos en un mismo excel en distintas
 pestañas, recurrimos a una lista, donde indicamos para cada elemento que
 queramos guardar “Nombre de la pestaña” = Objeto de R.</p>
-<pre class="r"><code>write.xlsx(list(resultado_cat_ocup = tabla_1, resultado_desc_jub = tabla_2), file = &quot;clase4/prueba1.xlsx&quot;)</code></pre>
+<pre class="r"><code>write.xlsx(list(&quot;resultado_cat_ocup&quot;=tabla_1 ,
+                &quot;resultado_desc_jub&quot;=tabla_2), 
+           file = &quot;clase4/prueba1.xlsx&quot;)</code></pre>
 <p>¡Terminamos! Ahora, vamos a la parte práctica.</p>
 </div>
 

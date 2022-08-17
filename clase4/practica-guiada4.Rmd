@@ -10,7 +10,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 
 
 ```{r setup, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
-knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=FALSE)
 ```
 
 
@@ -34,18 +34,33 @@ Por último, vamos a introducir el paquete **lubridate** para trabajar con forma
 
 ## Base de datos
 
-La **Encuesta Permanente de Hogares** (EPH) es un programa nacional de producción sistemática y permanente de indicadores sociales que lleva a cabo el Instituto Nacional de Estadística y Censos (INDEC), que permite conocer las características sociodemográficas y socioeconómicas de la población (se publican sus datos trimestralmente).
+La **Encuesta Permanente de Hogares** (EPH) es un programa nacional de producción sistemática y permanente de indicadores sociales que lleva a cabo el Instituto Nacional de Estadística y Censos (INDEC), que permite conocer las características sociodemográficas y socioeconómicas de la población (se publican sus datos trimestralmente). Se trata de la base de datos que usamos desde Ecofemidata para elaborar el informe [La desigualdad de género se puede medir.](https://ecofeminita.com/ecofemidata "Ecofemidata")
 
+Para descargar la base de microdatos vamos a utilizar la librería **eph**, que tiene por objecto facilitar el trabajo de aquellos usuarios y usuarias de la Encuesta Permanente de Hogares - INDEC que deseen procesar datos de la misma mediante el lenguaje de programación R. 
+La función *get_microdata* descarga bases de la Encuesta Permanente de Hogares a partir de 1996.
 
-Las variables de la EPH están codificadas, voy a reemplazar los códigos por su significado mirando el *diseño de registro* de la base.
+La estructura librería::función (la usamos en el caso de *eph::get_microdata()*) es útil para indicarnos de qué librería proviene una función (por ejemplo, en caso de que dos librerías distintas tengan funciones con un mismo nombre).
+
 
 ```{r levanto_base} 
- base <- eph::get_microdata(year = 2019, #definimos el año
+ 
+base <- eph::get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
                             type = "individual", #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                            destfile = "clase4/eph_2019_T1.rds") %>%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+                            destfile = "clase4/eph_2019_T1.rds")  #definimos dónde se va a guardar la base. 
+#De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+  
+```
+
+Las variables de la EPH están codificadas, vamos a reemplazar los códigos por su significado mirando el *diseño de registro* de la base.
+
+```{r}
+
+base <- base %>%  
+  #seleccionamos las variables que vamos a necesitar
   select(ESTADO,CAT_OCUP,"SEXO" = CH04, PONDERA) %>% 
   
+  #reemplazamos los códigos por su significado
   mutate(ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
                             ESTADO == 2 ~ "Desocupado",
                             ESTADO == 3 ~ "Inactivo",
@@ -60,16 +75,17 @@ Las variables de la EPH están codificadas, voy a reemplazar los códigos por su
                             CAT_OCUP == 4 ~ "TFSR"))
 ```
 
+
 # Medidas de resumen
 
 Para obtener información a partir del procesamiento de una base de datos, generalmente vamos a utilizar conjuntamente las funciones **group_by()** y **summarise()**:
 
-* *group_by()* cambia la unidad de análsis del dataset a grupos de filas definidos de acuerdo con las categorías de alguna variable (por ejemplo, si agrupamos según la variable sexo, se separará a la base de datos en dos conjuntos de filas: aquellos identificados con sexo == Mujeres y aquellos identificados como sexo == varón). 
+* *group_by()* cambia la unidad de análisis del dataset a grupos de filas definidos de acuerdo con las categorías de alguna variable (por ejemplo, si agrupamos según la variable SEXO, se separará a la base de datos en dos conjuntos de filas: aquellos identificados con SEXO == "Mujeres" y aquellos identificados como SEXO == "Varones"). 
 De este modo, las operaciones que apliquemos sobre la base agrupada se aplicarán separadamente sobre cada uno de estos grupos. 
 
 * *summarise()* crea una tabla nueva donde se resume información acerca del dataframe original. 
 La cantidad de filas de la nueva tabla será igual a la cantidad de grupos que hayamos definido (en caso de no agrupar, vamos a tener un único grupo, que es el conjunto de todas las filas).
-La cantidad de columnas de la tabla será igual a la suma de la cantidad de variables por las que agrupamos y la cantidad de medidas de resumen que queramos calcular (por ejemplo, podríamos querer conocer la cantidad de observaciones en cada grupo, el ingreso máximo de los miembros de cada grupo, y su ingreso medio -en este caso, tendríamos 3 columnas-).
+La cantidad de columnas de la tabla variará según la cantidad de variables por las que agrupamos y la cantidad de medidas de resumen que queramos calcular (por ejemplo, si quisiéramos conocer la cantidad de observaciones en cada grupo, el ingreso máximo de los miembros de cada grupo, y su ingreso medio, tendríamos 3 columnas).
 
 ## ¿summarise() o mutate()?
 
@@ -83,10 +99,13 @@ base %>%
   group_by(SEXO) %>% 
   summarise(Desocupados = sum(PONDERA[ESTADO == "Desocupado"], na.rm = TRUE),
             PEA = sum(PONDERA[ESTADO == "Desocupado"| ESTADO == "Ocupado"], na.rm = TRUE),
-            "Tasa de desocupación" = round((Desocupados/PEA)*100,1)) 
+            "Tasa de desocupación" = round( (Desocupados/PEA)*100 ,1)) 
+
+#El parámetro na.rm de la función sum() indica que, en caso de presentarse valores faltantes, se ignoren para la suma. Si esto no se aclara, en caso de presentarse un valor faltante, la función devuelve NA.
+#La función round() nos permite redondear un número a la cantidad de decimales que especifiquemos (en este caso, redondeamos el resultado de (Desocupados/PEA)*100 a 1 decimal).
 
 ```
-En este caso, para estudiar la cantidad de casos correspondientes a cada combinación, recurro a la variable PONDERA, debido a que la base que estoy utilizando es una encuesta, cuyos ponderadores permiten representar a la población total.
+Como la encuesta entrevista a una muestra de hogares o individuos que no son directamente la población total de la que se quiere hablar (como se hace por ejemplo en un Censo), la EPH nos dice con la variable PONDERA a cuánta gente representa cada observación, cada sujeto encuestado. Entonces, cuando queremos estimar cantidades, en lugar de simplemente contar filas, sumamos los PONDERA (de acuerdo a la condición aclarada entre corchetes)
 
 La tabla que obtenemos tiene 2 filas (las categorías de sexo) y cuatro columnas: una en la que aparece la variable que agrupa y tres donde aparecen las medidas de resumen que nos interesaba calcular. Lo que puede observarse en la tabla es que la tasa de desocupación es mayor para las mujeres.
 
@@ -97,12 +116,12 @@ La tabla que obtenemos tiene 2 filas (las categorías de sexo) y cuatro columnas
 base %>% 
   group_by(SEXO) %>% 
   mutate(Desocupados = sum(PONDERA[ESTADO == "Desocupado"], na.rm = TRUE),
-            PEA = sum(PONDERA[ESTADO == "Desocupado"| ESTADO == "Ocupado"], na.rm = TRUE),
-            "Tasa de desocupación" = round((Desocupados/PEA)*100,1)) 
+          PEA = sum(PONDERA[ESTADO == "Desocupado"| ESTADO == "Ocupado"], na.rm = TRUE),
+          "Tasa de desocupación" = round((Desocupados/PEA)*100,1)) 
 
 ```
 
-Obtenemos una tabla igual a la original, pero esta vez en cada fila correspondiente a las mujeres aparece la medida de resumen que le corresponde a ese grupo, y lo mismo para las filas correspondientes a varones.
+Obtenemos una tabla igual a la original, pero esta vez en cada fila correspondiente a las mujeres aparece la medida de resumen que le corresponde a ese grupo, y lo mismo para las filas correspondientes a varones. Es decir, mutate() no colapsa la información según los grupos definidos, sino que mantiene la misma cantidad de filas originales e imprime para cada caso la medida de resumen correspondiente al grupo al que pertenece cada observación.
 
 ## Múltiples argumentos en group_by()
 
