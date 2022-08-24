@@ -170,16 +170,27 @@ En algunos casos, vamos a necesitar transformar la presentación de la informaci
 
 + values_from: indico en qué columna están los valores de las variables
 
-Veamos un ejemplo:
+Veamos un ejemplo!
+
+Partiendo de la siguiente tabla:
 
 ```{r}
-base %>% 
+t_pivot_1 <- base %>% 
   filter(!is.na(ESTADO)) %>% 
   group_by(SEXO, ESTADO) %>% 
-  summarise(Casos = sum(PONDERA)) %>% 
+  summarise(Casos = sum(PONDERA))
+
+t_pivot_1
+```
+
+Aplicamos la función *pivot_wider()*:
+
+```{r}
+t_pivot_1 %>% 
   pivot_wider(.,id_cols=SEXO,names_from=ESTADO,values_from = Casos)
 ```
 
+De este modo, obtenemos una tabla de doble entrada que puede ser más fácil de leer en un informe o presentación.
 
 ## pivot_longer()
 
@@ -195,26 +206,22 @@ base %>%
 Revertimos la operación del ejemplo anterior:
 
 ```{r}
-base %>% 
-  filter(!is.na(ESTADO)) %>%
-  group_by(SEXO, ESTADO) %>% 
-  summarise(Casos = sum(PONDERA)) %>% 
+t_pivot_1 %>% 
   pivot_wider(.,id_cols=SEXO,names_from=ESTADO,values_from = Casos) %>% 
   pivot_longer(.,cols = c("Desocupado", "Inactivo","Menor de 10 años", "Ocupado"), names_to = "ESTADO", values_to = "Casos")
 ```
 
-
-
+Usualmente, vamos a recurrir a esta función cuando necesitemos seguir procesando la información (ya sea para otros cálculos o para graficar nuestros resultados).
 
 # Unión de bases
 
-Para unir bases de datos a partir de un identificador común vamos a recurrir a distintas funciones join():
+Para unir dos bases de datos x e y a partir de un identificador común vamos a recurrir a distintas funciones join(x,y):
 
-+ inner_join(): el resultado incluye todas las filas que estén presentes tanto en x como en y.
-+ left_join(): el resultado incluye todas las filas que estén presentes en x (agregando las columnas de y con información sobre estas filas).
-+ right_join(): el resultado incluye todas las filas que estén presentes en y (agregando las columnas de x con información sobre estas filas).
-+ full_join(): el resultado incluye todas las filas que estén en x o y.
-+ anti_join(): el resultado incluye todas las filas de x que no estén presentes en y (sólo muestra las columnas de x).
++ inner_join(x,y): el resultado incluye todas las filas que estén presentes tanto en x como en y.
++ left_join(x,y): el resultado incluye todas las filas que estén presentes en x (agregando las columnas de y con información sobre estas filas).
++ right_join(x,y): el resultado incluye todas las filas que estén presentes en y (agregando las columnas de x con información sobre estas filas).
++ full_join(x,y): el resultado incluye todas las filas que estén en x o y.
++ anti_join(x,y): el resultado incluye todas las filas de x que no estén presentes en y (sólo muestra las columnas de x).
 
 ![Fuente: http://rstudio-pubs-static.s3.amazonaws.com/227171_618ebdce0b9d44f3af65700e833593db.html](./imgs/joins.png)
 
@@ -231,8 +238,12 @@ Para utilizar estas funciones, vamos a tener que explicitar:
 
 Vamos a trabajar con la unión de tablas intentando responder la siguiente pregunta: si considerásemos a las personas amas de casa como económicamente activas, ¿cómo se modifican las tasas de actividad de varones y mujeres? 
 
+Además de introducir esta nueva función, tomamos esta oportunidad para repasar algunas de las funciones con las que trabajamos en los encuentros anteriores.
+
 ```{r}
- base <- eph::get_microdata(year = 2019, 
+#En primer lugar, levantamos la base con la que vamos a trabajar y recodificamos las variables en base al código de registro:
+ 
+base <- eph::get_microdata(year = 2019, 
                             trimester = 1, 
                             type = "individual", 
                             destfile = "clase4/eph_2019_T1.rds") %>%  
@@ -269,7 +280,7 @@ tabla_1 <- base %>%
             "Tasa de actividad" = round((PEA/Poblacion)*100,1)) %>% 
   select(-PEA,-Poblacion) 
 
-head(tabla_1)
+tabla_1
 
 ```
 
@@ -277,19 +288,24 @@ Luego, vamos a calcularla clasificando a las amas de casa como parte de la pobla
 
 ```{r}
 tabla_2 <- base %>% 
+  
+  #creamos una nueva variable ESTADO_corregido, donde replicamos las categorías de ESTADO excepto en el caso de las amas de casa: en vez de clasificarlas como inactivas, las clasificamos como ocupadas.
+  
   mutate(ESTADO_corregido = case_when(ESTADO == "Inactivo" & CAT_INAC == "Ama de casa" ~ "Ocupado",
                                       TRUE ~ paste0(ESTADO))) %>% 
+  
+  #Luego, calculamos la tasa de actividad para cada sexo en base a esta nueva variable.
   group_by(SEXO) %>% 
   summarise(PEA = sum(PONDERA[ESTADO_corregido == "Desocupado"| ESTADO_corregido == "Ocupado"], na.rm = TRUE),
             Poblacion = sum(PONDERA),
             "Tasa de actividad corregida" = round((PEA/Poblacion)*100,1)) %>% 
   select(-PEA,-Poblacion) 
 
-head(tabla_2)
+tabla_2
 
 ```
 
-Ahora, vamos a unir las tablas y calcular la diferencia:
+Ahora, vamos a recurrir a la nueva función *inner_join()* para unir las tablas y calcular la diferencia entre ambos cómputos:
 
 ```{r}
 inner_join(tabla_1,tabla_2,by = "SEXO") %>% 
@@ -316,7 +332,7 @@ tabla_1 <-  base %>%
          "Frecuencia relativa" = round((Casos/Total)*100,1)) %>% 
   select(-Casos, -Total)
 
-head(tabla_1)
+tabla_1
 
 ```
 
@@ -333,7 +349,7 @@ tabla_2 <- base %>%
   select(-Casos, -Total) %>% 
   pivot_wider(.,id_cols = c(SEXO, CAT_OCUP), names_from = DESC_JUBILATORIO, values_from = "Frecuencia relativa")
 
-head(tabla_2)
+tabla_2
 
 ```
 
@@ -373,7 +389,7 @@ tabla_2 <- base %>%
          "Frecuencia relativa" = round((Casos/Total)*100,1)) %>% 
   select(-Casos, -Total) 
 
-head(tabla_2)
+tabla_2
 
 ```
 
@@ -397,15 +413,24 @@ Una de las herramientas que pueden ayudarnos es la función **unique()**, que al
 
 ```{r}
 
+#sin unique()
+
 left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP")) %>% 
   select("SEXO","CAT_OCUP")
 
+
+```
+
+```{r}
+
+#con unique()
 
 left_join(tabla_1,tabla_2, by = c("SEXO","CAT_OCUP")) %>% 
   select("SEXO","CAT_OCUP") %>% 
   unique()
 
 ```
+
 
 
 # Trabajo con fechas
@@ -441,7 +466,11 @@ Para ver todo lo que ofrece, consultar: https://rawgit.com/rstudio/cheatsheets/m
 fecha_1 <- "30 de abril 2021"
 
 class(fecha_1)
+
+#Esta fecha es un string
+
 ```
+
 Mediante la combinacion de los caracteres dmy_hms que representan a día(d), mes(m), año(y), hora(h), minuto(m) y segundo(s) podemos convertir un número (o un string) hacia una fecha.
 
 ```{r}
@@ -450,7 +479,33 @@ fecha_1_formato <- dmy(fecha_1)
 fecha_1_formato
 
 class(fecha_1_formato)
+
+#Ahora logramos convertirla al formato Date
+
 ```
+El orden de los caracteres dmy_hms tiene que responder a la estructura de la información que intentamos convertir al formato fecha: si pedimos una estructura que no puede extraerse del input, no se convierte el string en una fecha.
+
+```{r}
+
+#cambiamos dmy por mdy
+
+fecha_1_formato_mal <- mdy(fecha_1)
+
+fecha_1_formato_mal
+
+```
+```{r}
+
+#En qué caso funcionaría la estructura mdy? Con un input en ese orden
+
+fecha_1_v2 <- "abril 30 de 2021"
+
+fecha_1_v2_formato <- mdy(fecha_1_v2)
+
+fecha_1_v2_formato
+
+```
+
 También podría crear una fecha con horas, minutos y segundos:
 
 ```{r}
@@ -546,9 +601,9 @@ llamados_atendidos_violencia_familiar_202202 %>%
 
 # Exportar resultados
 
-Los objetos que creamos en el entorno de R existen en es entorno de R y al cerrar la sesión, desaparecen. Sin embargo, podemos querer guardar algún resultado. A estos fines, podemos recurrir a las herramientas para exportar a excel nuestros resultados.
+Los objetos que creamos en el entorno de R existen en el entorno de R y al cerrar la sesión, desaparecen. Sin embargo, podemos querer guardar algún resultado. A estos fines, podemos recurrir a las herramientas para exportar a excel nuestros resultados.
 
-El comando más simple para hacer esto es write.xlsx()
+El comando más simple para hacer esto es write.xlsx() del paquete *openxlsx*:
 
 ```{r}
 write.xlsx(tabla_1, file = "clase4/prueba1.xlsx")
@@ -562,5 +617,7 @@ write.xlsx(list("resultado_cat_ocup"=tabla_1 ,
            file = "clase4/prueba1.xlsx")
 ```
 
+
+Existen otros paquetes para importar y exportar datos además de *openxlsx*, tales como *haven* y *foreign* (para archivos 'SPSS', 'Stata', 'SAS', etc.)
 
 ¡Terminamos! Ahora, vamos a la parte práctica. 
