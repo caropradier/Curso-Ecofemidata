@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
 library(tidyverse)
 library(eph)
 library(spatstat)
-options(scipen = 9999)
+options(scipen = 9999) #la opción scipen modifica el límite en el que los números decimales pasan a expresarse con notación científica. En este caso, lo utilizamos para evitar la notación científica.
 options(dplyr.summarise.inform = FALSE)
 
 ```
@@ -51,10 +51,8 @@ base <- eph::get_microdata(year = 2019,
                             ESTADO == 4 ~ "Menor de 10 años"),
          SEXO = case_when(SEXO == 1 ~ "Varones",
                           SEXO == 2 ~ "Mujeres")) %>% 
-  filter(Ing_Ocup_Principal != -9) %>%  #valor de no respuesta
+  filter(Ing_Ocup_Principal != -9) %>%  #excluimos el valor de no respuesta
   filter(ESTADO == "Ocupado")
-
-
 
 ```
 
@@ -66,34 +64,39 @@ Calculamos el ingreso medio de los trabajadores de cada sexo y sector, y luego l
 #Aclaración: el ponderador para la variable de ingreso de la ocupación proncipal es PONDIIO
 
 ingresos <- base %>% 
-  filter(Ing_Ocup_Principal > 0) %>%
+  filter(Ing_Ocup_Principal > 0) %>% #excluimos a personas con ingreso = 0
   group_by(SEXO,caes_eph_label) %>% 
-  summarise(Ingreso_medio = weighted.mean(Ing_Ocup_Principal,PONDIIO, na.rm = T)) %>% 
+  summarise(Ingreso_medio = weighted.mean(Ing_Ocup_Principal,PONDIIO, na.rm = T)) %>% #al igual que en otras funciones, en este caso na.rm excluye los valores faltantes del promedio ponderado
   pivot_wider(id_cols = caes_eph_label, names_from = SEXO, values_from = Ingreso_medio) %>% 
-  mutate(Brecha =  ((Varones-Mujeres)/Varones))
+  mutate(brecha =  ((Varones-Mujeres)/Varones))
 
-head(ingresos)
+ingresos
 
+```
+
+```{r}
 feminizacion <-  base %>% 
   group_by(SEXO,caes_eph_label) %>%
   summarise(Casos = sum(PONDERA)) %>% 
   ungroup() %>% 
   group_by(caes_eph_label) %>% 
   mutate(Total = sum(Casos),
-         Prop = (Casos/Total)*100) %>% 
+         feminizacion = (Casos/Total)*100) %>% 
   filter(SEXO == "Mujeres") %>% 
-  select(caes_eph_label, Prop)
+  select(caes_eph_label, feminizacion)
 
-head(feminizacion)
+feminizacion
 
+```
+
+```{r}
 ingresos <- ingresos %>% 
   left_join(.,feminizacion, by = "caes_eph_label")
 
 ingresos
-
 ```
 
-
+Tal como se refleja en nuestros resultados, las brechas de ingresos tienden a estar a favor de los varones. No obstante, es interesante vincular este análisis con la tasa de feminización para interpretar casos como el del sector de la Construcción, donde la mayor parte de los trabajadores son varones, pero las mujeres participan en roles que requieren una mayor calificación (trabajo de oficina, arquitectas, etc.): esto tiene como resultado una brecha de ingresos a favor de las mujeres.
 
 ## plotly
 
@@ -111,11 +114,11 @@ En nuestro gráfico, vamos a graficar el ingreso medio de cada sector productivo
 #La sintaxis es un poco distinta a la de ggplot, más abajo podemos ver cómo recurrir a ella si nos resulto más cómoda
 
 plot_ly(ingresos, x = ~Mujeres, y = ~Varones, 
-        color = ~Brecha, colors = 'Spectral',
-        type = 'scatter', mode = 'markers',  marker = list(size = ~Prop, opacity = 0.9),
+        color = ~brecha, colors = 'Spectral',
+        type = 'scatter', mode = 'markers',  marker = list(size = ~feminizacion, opacity = 0.9),
         
         hoverinfo = 'text',
-        text = ~paste(caes_eph_label, '<br>Mujeres:', paste0("$",round(Mujeres,1)), '<br>Varones:', paste0("$",round(Varones,1)), '<br>Brecha:', paste0(round(Brecha*100,1), "%"), '<br>Proporción de trabajadoras mujeres:', paste0(round(Prop,1), "%"))
+        text = ~paste(caes_eph_label, '<br>Mujeres:', paste0("$",round(Mujeres,1)), '<br>Varones:', paste0("$",round(Varones,1)), '<br>Brecha:', paste0(round(brecha*100,1), "%"), '<br>Proporción de trabajadoras mujeres:', paste0(round(feminizacion,1), "%"))
         
         ) %>% 
        layout(title = 'Ingreso medio y brecha salarial por sector productivo',
@@ -142,9 +145,9 @@ feminizacion <-  base %>%
   ungroup() %>% 
   group_by(caes_eph_label) %>% 
   mutate(Total = sum(Casos),
-         Prop = (Casos/Total)*100)%>% 
+         feminizacion = (Casos/Total)*100)%>% 
   filter(SEXO == "Mujeres") %>% 
-  select(caes_eph_label, Prop)
+  select(caes_eph_label, feminizacion)
 
 
 feminizacion
@@ -158,10 +161,10 @@ library(wesanderson)
 
 
 plot_estatico <- feminizacion %>% 
-  ggplot(.,aes(x = fct_reorder(caes_eph_label,Prop), y = Prop, 
-        fill = Prop,
-        #para que el hovertext nos quede como queremos 
-        text = paste(caes_eph_label, '<br>Proporción de trabajadoras mujeres:', paste0(round(Prop,1), "%"))
+  ggplot(.,aes(x = fct_reorder(caes_eph_label,feminizacion), y = feminizacion, 
+        fill = feminizacion,
+        #para que el hovertext nos quede como queremos en el siguiente paso 
+        text = paste(caes_eph_label, '<br>Proporción de trabajadoras mujeres:', paste0(round(feminizacion,1), "%"))
   )
         )+
   geom_col(alpha = 0.9)+
@@ -313,13 +316,27 @@ for (valor in (seq(length(vector_valores)))) {
   
   resultados[[valor]] <-  tabla_resumen
   
+  #En este caso, estamos usando “valor” como iterador, en el sentido de índice dentro de un vector (vector_valores). Si en cada iteración, además de nuestro procesamiento imprimos "valor", obtenemos la serie de índices.
+  
+  print(valor)
+  
+  #Es decir, no estamos recurriendo directamente a cada uno de los valores del vector, sino que cada sector se corresponde con uno de estos índices. Los podemos obtener (por ejemplo) así:
+  
+  print(unique(as.character(tabla_resumen$sector)))
+  
+  #Al iterar, print puede ser muy útil para entender qué está pasando (especialmente si los resultados no son los que esperamos!).
+  
 }
 
+
+```
+
+```{r}
 #Veamos una de las tablas que generamos:
 
 resultados[[3]]
-
 ```
+
 
 También podemos presentar nuestros resultados de una manera más amigable con quien está leyendo, o listo para copiar e incluir en un informe:
 
