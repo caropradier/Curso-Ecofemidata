@@ -29,7 +29,9 @@ En la clase de hoy vamos a avanzar sobre nuevas funciones para explorar la infor
 
 En particular, vamos a estudiar cómo usar funciones para crear medidas resumen, unir dataframes y “pivotearlos”.
 
-Por último, vamos a introducir el paquete **lubridate** para trabajar con formatos de fecha.
+Por otro lado, vamos a introducir el paquete **lubridate** para trabajar con formatos de fecha.
+
+Por último, vamos a trabajar sobre distintas formas de exportar nuestros resultados e importar bases de datos.
 
 
 ## Base de datos
