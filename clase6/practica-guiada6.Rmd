@@ -272,6 +272,7 @@ for (i in (seq(3))) {
 #defino el vector
 vec <- c("a","b","c")
 
+
 #¿cuántos elementos tiene?
 length(vec)
 
@@ -383,6 +384,8 @@ for (valor in (seq(length(vector_valores)))) {
     summarise(Casos = sum(PONDIIO, na.rm = T),
               sector = unique(caes_eph_label)) 
   
+  #print(head(tabla_resumen,5))
+  
   datos_graf[[valor]] <-  tabla_resumen
   
 }
@@ -418,8 +421,9 @@ crear_grafico = function(tabla){
              y = "Ingreso de la ocupación principal",
              x = "Horas semanales trabajadas",
              color = "Sexo")+
-        theme(legend.position = "bottom")+
-    ggsave(paste0("clase6/graficos/",tolower(str_replace_all(unique(tabla$sector), " ", "_")),".png"))
+        theme(legend.position = "bottom")
+  
+    ggsave(paste0("clase6/graficos/",tolower(str_replace_all(unique(tabla$sector), " ", "_")),".png"), bg = "white")
   
 }
 
