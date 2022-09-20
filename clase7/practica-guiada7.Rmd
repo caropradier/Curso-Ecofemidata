@@ -10,7 +10,7 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 
 
 ```{r setup, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
-knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=FALSE)
 ```
 
 
@@ -49,7 +49,7 @@ El INDEC realizó la Encuesta Nacional de Gastos de los Hogares 2017-2018 (ENGHo
 La base de artículos contiene la descripción de los productos y las divisiones, los grupos, las clases y las subclases que los contienen (en la base de gastos aparece el código, no la descripción).
 
 ```{r}
-articulos <- read.table(file ="./engho/engho2018_articulos.txt",sep="|", dec=".", header = TRUE, fill = TRUE,fileEncoding = "UTF-8")
+articulos <- read.table(file ="clase7/engho/engho2018_articulos.txt",sep="|", dec=".", header = TRUE, fill = TRUE,fileEncoding = "UTF-8")
 
 #por ejemplo, para ver los articulos que están relacionados a Salud
 
@@ -67,7 +67,7 @@ Las bases se conectan entre si la variable id (identifica hogar) y miembro (iden
 
 ```{r}
 #un registro por cada artículo adquirido por el hogar y sus miembros
-gastos <- read.table(file ="./engho/engho2018_gastos.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+gastos <- read.table(file ="clase7/engho/engho2018_gastos.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
 
 #names(gastos)
 
@@ -76,7 +76,7 @@ gastos <- read.table(file ="./engho/engho2018_gastos.txt",sep="|", dec=".", head
 ```
 ```{r}
 #un registro por hogar: cada hogar se identifica usando "id"
-hogares <- read.table(file ="./engho/engho2018_hogares.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+hogares <- read.table(file ="clase7/engho/engho2018_hogares.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
 
 #names(hogares)
 
@@ -87,7 +87,7 @@ hogares <- read.table(file ="./engho/engho2018_hogares.txt",sep="|", dec=".", he
 
 ```{r}
 #un registro por persona: cada persona se identifica usando "id" y "miembro"
-personas <- read.table(file ="./engho/engho2018_personas.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
+personas <- read.table(file ="clase7/engho/engho2018_personas.txt",sep="|", dec=".", header = TRUE, fill = TRUE)
 
 #names(personas)
 
@@ -218,7 +218,7 @@ La EANNA es una encuesta realizada por el Ministerio de Trabajo, Empleo y Seguri
 ```{r}
 library(readr)
 library(tidyverse)
-eanna_urb <- read_delim("./EANNA/EANNA_urbana.csv")
+eanna_urb <- read_delim("clase7/EANNA/EANNA_urbana.csv")
 ```
 
 Un análisis que podemos realizar a partir de ella es acerca de las distinciones en el abandono escolar y tipos de trabajo realizado, según género. Para ello, podemos ver cuáles son las preguntas que nos interesan para el análisis [en el manual de uso de la base de datos](https://www.indec.gob.ar/ftp/cuadros/menusuperior/eanna/eanna_urbana_manual_bases.pdf). Esta es una práctica que tenemos que incorporar siempre que trabajemos con bases de datos nuevas.
