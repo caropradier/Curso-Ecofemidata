@@ -51,4 +51,4 @@ datos_resultados <- list()
 
 #Cree una visualización interactiva de alguno de los procesamientos guardados en la lista datos_resultados, donde se exprese claramente el universo de población analizado, el indicador propuesto, y el contraste entre los resultados para la población femenina y masculina.
 
-##Bonus: intente transformar su código de visualización en una función donde el argumento sea el nivel educativo alcanzado, a los fines de poder visualizar con mayor comodidad los resultados para cualquier segmento de la población (pista: los elemenots del vector vector_niveles_educativos están en el mismo orden que la lista datos_resultados, indexe!).
+##Bonus: intente transformar su código de visualización en una función donde el argumento sea el nivel educativo alcanzado, a los fines de poder visualizar con mayor comodidad los resultados para cualquier segmento de la población (pista: los elementos del vector vector_niveles_educativos están en el mismo orden que la lista datos_resultados, indexe!).

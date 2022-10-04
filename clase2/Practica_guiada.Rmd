@@ -265,13 +265,6 @@ objeto_3 > objeto_4
 
 O **lógicos**, los cuales son para hacer expresiones booleanas. Esto quiere decir que se usan para hacer combinaciones y búsquedas más complejas. Los principales son `&` para hacer búsquedas de AND, o `|` para hacer búsquedas OR.
 
-```{r}
-x <- c(TRUE,FALSE,0,6)
-y <- c(FALSE,TRUE,FALSE,TRUE)
-x&y
-x|y
-```
-
 ## Navegando por los objetos
 
 Ahora bien, ¿de qué sirve almacenar los valores en objetos como vectores, listas o dataframes? ¿Cómo podemos acceder a estos valores? ¿Cómo podemos aplicar transformaciones a un subconjunto de estos objetos? A estas operaciones se las llama *subsetting* o *slicing*.
@@ -323,13 +316,18 @@ Y podemos consultarle a R los valores completos de una columna con el comando `$
 data$edades
 ```
 
-Acorde a lo visto anteriormente, el acceso a los **dataframes** mediante `[ ]` puede utilizarse también para realizar filtros con operadores. Por ejemplo, puedo utilizar los `[ ]` para obtener del **dataframe** `Datos` unicamente los registros de desocupados:
+Acorde a lo visto anteriormente, el acceso a los **dataframes** mediante `[ ]` puede utilizarse también para realizar filtros con operadores. Por ejemplo, puedo utilizar los `[ ]` para obtener del **dataframe** los registros de personas mayores de 25:
 
 ```{r}
 data[data$edad > "25", ]
 ```
 
-La lógica del paso anterior sería: Accedo al dataframe `data`, pidiendo únicamente conservar las filas (por eso la condición se ubica a la *izquierda* de la `,`) que cumplan el requisito de ser mayores de 25 en la variable **edad**.
+La lógica del paso anterior sería: Accedo al dataframe `data`, pidiendo únicamente conservar las filas (por eso la condición se ubica a la *izquierda* de la `,`) que cumplan el requisito de ser mayores de 25 en la variable **edad**. También puedo poner más de dos condiciones:
+
+```{r}
+data[data$edad > "25" & data$nombre == "Natsumi Shokida", ]
+```
+
 
 ## Funciones
 
@@ -388,11 +386,11 @@ Ya que estamos, podemos ver un popurrí de funciones de R base que resultan bast
 
 -   `table()`: devuelve una tabla de frecuencias de un vector de texto o factor.
 
-\-`prop.table()`: devuelve una tabla de frecuencias relativas en proporción. Para obtener los porcentajes, hago: `prop.table(vector)*100`
+- `prop.table()`: devuelve una tabla de frecuencias relativas en proporción. Para obtener los porcentajes, hago: `prop.table(vector)*100`
 
-\-`sum()`: realiza la suma de todos los valores de un vector.
+- `sum()`: realiza la suma de todos los valores de un vector.
 
-\-`round()`: hace un redondeo de los valores. Con el argumento `digits` defino qué cantidad de decimales dejo.
+- `round()`: hace un redondeo de los valores. Con el argumento `digits` defino qué cantidad de decimales dejo.
 
 ### Borrar objetos
 

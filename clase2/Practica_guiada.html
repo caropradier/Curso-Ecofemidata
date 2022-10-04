@@ -1507,7 +1507,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Clase 2 - R base</h1>
 <h4 class="author">EcoFemiData</h4>
-<h4 class="date">16 agosto, 2022</h4>
+<h4 class="date">19 septiembre, 2022</h4>
 
 </div>
 
@@ -1855,12 +1855,6 @@ otro.</li>
 booleanas. Esto quiere decir que se usan para hacer combinaciones y
 búsquedas más complejas. Los principales son <code>&amp;</code> para
 hacer búsquedas de AND, o <code>|</code> para hacer búsquedas OR.</p>
-<pre class="r"><code>&gt; x &lt;- c(TRUE,FALSE,0,6)
-&gt; y &lt;- c(FALSE,TRUE,FALSE,TRUE)
-&gt; x&amp;y
-## [1] FALSE FALSE FALSE  TRUE
-&gt; x|y
-## [1]  TRUE  TRUE FALSE  TRUE</code></pre>
 </div>
 <div id="navegando-por-los-objetos" class="section level2">
 <h2>Navegando por los objetos</h2>
@@ -1916,8 +1910,7 @@ comando <code>$</code>:</p>
 <strong>dataframes</strong> mediante <code>[ ]</code> puede utilizarse
 también para realizar filtros con operadores. Por ejemplo, puedo
 utilizar los <code>[ ]</code> para obtener del
-<strong>dataframe</strong> <code>Datos</code> unicamente los registros
-de desocupados:</p>
+<strong>dataframe</strong> los registros de personas mayores de 25:</p>
 <pre class="r"><code>&gt; data[data$edad &gt; &quot;25&quot;, ]
 ##           nombres edades
 ## 3 Natsumi Shokida     29
@@ -1926,7 +1919,10 @@ de desocupados:</p>
 <code>data</code>, pidiendo únicamente conservar las filas (por eso la
 condición se ubica a la <em>izquierda</em> de la <code>,</code>) que
 cumplan el requisito de ser mayores de 25 en la variable
-<strong>edad</strong>.</p>
+<strong>edad</strong>. También puedo poner más de dos condiciones:</p>
+<pre class="r"><code>&gt; data[data$edad &gt; &quot;25&quot; &amp; data$nombre == &quot;Natsumi Shokida&quot;, ]
+##           nombres edades
+## 3 Natsumi Shokida     29</code></pre>
 </div>
 <div id="funciones" class="section level2">
 <h2>Funciones</h2>
@@ -1999,14 +1995,15 @@ calcular. Por ejemplo, si quisiese calcular los rangos intercuartiles
 indicaría: <code>prob = c(0.25, 0.5, 0.75)</code>.</p></li>
 <li><p><code>table()</code>: devuelve una tabla de frecuencias de un
 vector de texto o factor.</p></li>
-</ul>
-<p>-<code>prop.table()</code>: devuelve una tabla de frecuencias
+<li><p><code>prop.table()</code>: devuelve una tabla de frecuencias
 relativas en proporción. Para obtener los porcentajes, hago:
-<code>prop.table(vector)*100</code></p>
-<p>-<code>sum()</code>: realiza la suma de todos los valores de un
-vector.</p>
-<p>-<code>round()</code>: hace un redondeo de los valores. Con el
-argumento <code>digits</code> defino qué cantidad de decimales dejo.</p>
+<code>prop.table(vector)*100</code></p></li>
+<li><p><code>sum()</code>: realiza la suma de todos los valores de un
+vector.</p></li>
+<li><p><code>round()</code>: hace un redondeo de los valores. Con el
+argumento <code>digits</code> defino qué cantidad de decimales
+dejo.</p></li>
+</ul>
 </div>
 <div id="borrar-objetos" class="section level3">
 <h3>Borrar objetos</h3>

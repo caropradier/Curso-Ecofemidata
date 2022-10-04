@@ -16,16 +16,17 @@ knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, tidy=TRUE)
 
 Cuando estamos haciendo un gráfico, hacemos que nuestros datos sean comprensibles visualmente de manera rápida. La visualización de datos es un trabajo esencial, y en general nos puede dar respuestas simples a las preguntas de nuestros problemas de investigación. 
 
-En esta clase vamos a ver una aproximación a los principios básicos de la visualización de datos y cómo plasmarlos en la librería `ggplot`. Este está incluído en la librería `tidyverse`, por lo que no hace falta que lo vuelvan a descargar. 
+En esta clase vamos a ver una aproximación a los principios básicos de la visualización de datos y cómo plasmarlos con la librería `ggplot.` Esta está incluído en la librería `tidyverse`, por lo que no hace falta que la vuelvan a descargar.
 
 Hay dos cuestiones centrales de `ggplot` para saber: 
 
 - Incluye funciones para realizar una gran variedad de visualizaciones. 
 - Su concepto central es la asignación (*mapping* en inglés) de atributos estéticos a los valores que toma una variable. Dicho de otra forma, permite mostrar de modo perceptible a la vista la diferencia entre valores: con distintos colores, distintos tamaños, distintas posiciones en un gráfico, etc.
+- Las distintas modificaciones que le hacemos al gráfico se agregan como *capas*, de una manera similar a como hacíamos con las pipes en tidyverse. 
 
 ## Visualización con `ggplot`
 
-Vamos a ello. En primer lugar, vamos a hacer lo que ya sabemos. Importamos la librería `tidyverse`, luego las liberías `stats` y `spatstat` para funciones adicionales y la librería `eph` que va a contener el paquete y la base de datos del primer trimestre de 2019 de la EPH.
+Vamos a ello. En primer lugar, vamos a hacer lo que ya sabemos. Importamos la librería `tidyverse`, luego las liberías `stats` y `spatstat` para funciones adicionales y la librería `eph` que va a contener la base de datos del primer trimestre de 2019 de la EPH.
 
 ```{r, echo=TRUE, warning=TRUE}
 library(tidyverse)
@@ -37,7 +38,7 @@ base <- get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
                             type = "individual", 
                             destfile = "./data/eph_2019_T1.rds") %>%  
-  select(REGION, CH06, ESTADO, CAT_OCUP , "SEXO" = CH04, PP08D1, PONDIIO) %>% 
+  select(REGION, CH06, ESTADO, CAT_OCUP , "SEXO" = CH04, PP08D1, PONDERA, PONDIIO) %>% 
   mutate(ESTADO = case_when(ESTADO == 0 ~ "NR",
                             ESTADO == 1 ~ "Ocupado",
                             ESTADO == 2 ~ "Desocupado",
@@ -60,6 +61,10 @@ base <- get_microdata(year = 2019, #definimos el año
            REGION == 43 ~ "Pampeana",
            REGION == 44 ~ "Patagonia"))
 
+```
+
+```{r}
+head(base)
 ```
 
 La unidad básica de este paquete, que llamaremos todas las veces que queramos hacer un gráfico, es la función `ggplot()`. Veamos qué sucede si la usamos:
@@ -100,11 +105,13 @@ ggplot(tb_sexo, aes(x=SEXO, y = perc))+
 
 ## Combinación con gramática tidy
 
-Al estar incluida en el mundo `tidyverse`, podemos combinar ggplot con otros objetos a través de `%>%`. Esto es útil sobre todo en combinación con la función `group_by()` para realizar conteos de frecuencias, sumas de columnas, y otras operaciones. Probemos agrupando el precio medio de productos por región y haciendo un gráfico que pone `Region` en el eje `x`, el `precio` en el eje `y` y usa la geometría `geom_bar()`. Como en este caso no queremos mostrar un conteo sino diferencias entre valores y asignamos el eje y nosotros, le pasamos el atributo `stat = 'identity'`. `ggplot` [tiene un amplio repertorio de geometrías](https://www.maths.usyd.edu.au/u/UG/SM/STAT3022/r/current/Misc/data-visualization-2.1.pdf), que también [podemos ver aquí](https://r-graph-gallery.com/).
+Al estar incluida en el mundo `tidyverse`, podemos combinar ggplot con otros objetos a través de `%>%`. Esto es útil sobre todo en combinación con la función `group_by()` para realizar conteos de frecuencias, sumas de columnas, y otras operaciones. Probemos agrupando la edad media ponderada de las personas por región. Para hacer la media ponderada utilizaremos la función `weighted.mean()`, a la cual le vamos a pasar la variable de edad (`CH06`) y la variable para ponderar edades `PONDERA`.
+
+A continuación, haremos un gráfico que pone `Region` en el eje `x`, el `edad_media` en el eje `y` y usa la geometría `geom_bar()`. Como en este caso no queremos mostrar un conteo sino diferencias entre valores y asignamos el eje y nosotros, le pasamos el atributo `stat = 'identity'`. `ggplot` [tiene un amplio repertorio de geometrías](https://www.maths.usyd.edu.au/u/UG/SM/STAT3022/r/current/Misc/data-visualization-2.1.pdf), que también [podemos ver aquí](https://r-graph-gallery.com/).
 
 ```{r}
 base %>% group_by(REGION)%>%
-        summarise(edad_media = weighted.mean(CH06, PONDIIO, na.rm=TRUE)) %>%
+        summarise(edad_media = weighted.mean(CH06, PONDERA, na.rm=TRUE)) %>%
         ggplot(aes(x=REGION, y=edad_media))+
         geom_bar(stat = 'identity')
 
@@ -122,8 +129,9 @@ base %>%
 
 ```
 
+Este gráfico tiene sentido, ya que es normal que los ingresos de las personas suban al principio por cuestiones de adquirir experiencia, formación y antiguedad, pero a medida que se acerca la edad de retiro los salarios van cayendo. 
 
-Se puede elegir entre una variada colección de geoms para hacer toda clase de gráficos. Por ejemplo, `geom_boxplot()` crea _boxplots_ (o ["diagramas de caja"](https://economipedia.com/definiciones/diagrama-de-caja.html)). Al hacer boxplots es común mostrar un gráfico separado para cada categoría presente en la data a mostrar, usando para eso el eje de las `x` o de las `y`. ¡Hagamos eso mismo! Pongamos `PP08D1` en el eje `y`, `REGION` en el eje de las `x`, y a dibujar cajas con `geom_boxplot()`.
+Se puede elegir entre una variada colección de geoms para hacer toda clase de gráficos. Por ejemplo, `geom_boxplot()` crea _boxplots_ (o ["diagramas de caja"](https://economipedia.com/definiciones/diagrama-de-caja.html)). Estos nos sirven para comparar distribuciones de los datos entre categorías. Al hacer boxplots es común mostrar un gráfico separado para cada categoría presente en la data a mostrar, usando para eso el eje de las `x` o de las `y`. ¡Hagamos eso mismo! Pongamos `PP08D1` en el eje `y`, `REGION` en el eje de las `x`, y a dibujar cajas con `geom_boxplot()`.
 
 ```{r}
 base %>% 
@@ -131,6 +139,18 @@ base %>%
   ggplot(aes(x = REGION, y = PP08D1)) +
   geom_boxplot()
 ```
+
+Fíjense que lo que podemos ver aquí es que la patagonia tiene los salarios más altos entre las regiones. A esto le podemos agregar más variables como por ejemplo, ¿cómo se distribuyen los salarios de varones y mujeres entre las regiones?
+
+```{r}
+base %>% 
+  filter(CAT_OCUP == "Empleado")%>% 
+  ggplot(aes(x = REGION, y = PP08D1, color = SEXO)) +
+  geom_boxplot()
+
+```
+
+Aquí podemos ver que las regiones donde los salarios medianos de varones y mujeres más se distancian son en el Gran Buenos Aires, Patagonia y la región Pampeana. Mientras que la región donde se achica más la distancia entre los salario medianos es en el NOA. 
 
 Por último, podemos graficarlo en un gráficos de dispersión, o _scatterplots_. Consisten en puntos proyectados en un eje de coordenadas, donde cada punto representa una observación. 
 
@@ -151,6 +171,19 @@ base %>%
   group_by(SEXO, ESTADO) %>% #Agrupamos por sexo y estado
   summarise(n=sum(PONDIIO))%>% #Contamos
   ggplot(aes(x=SEXO, y=n, fill = ESTADO))+ #Le pasamos al eje x el sexo, al eje y la cantidad de casos y al atributo fill el estado ocupacional
+  geom_col()
+```
+
+Fíjense que acá los valores del eje y no me aparecen en absolutos. Esto es porque cuando trabaja con valores muy grandes o muy pequeños, R utiliza la notación científica. Para eliminarla, tengo que correr el siguiente comando sólo una vez en mi entorno de trabajo: 
+
+```{r}
+options(scipen=999)
+
+base %>% 
+  filter(ESTADO != "Menor de 10 años")%>%  
+  group_by(SEXO, ESTADO) %>% 
+  summarise(n=sum(PONDIIO))%>% 
+  ggplot(aes(x=SEXO, y=n, fill = ESTADO))+ 
   geom_col()
 ```
 
@@ -177,7 +210,7 @@ base %>%
 
 ```
 
-Ahora, vamos a escapar un poco de las barras. Podemos replicar el gráfico de evolución de ingresos a lo largo de los años pero introduciendo la variable de género. 
+Ahora, vamos a escapar un poco de las barras. Podemos replicar el gráfico de evolución de ingresos por género a lo largo de los años con cuestiones de probabilidad. 
 
 Esto lo podemos hacer en un gráfico de densidad. Lo que muestran es la distribución de probabilidad de la variable, es decir que tan probable es encontrar un valor determinado si tomaramos al azar una de las observaciones. Para esto, tenemos que pasarle al atributo `x` la variable de interés y agregar la geometría `geom_density()`. Probémoslo.
 
@@ -199,7 +232,7 @@ base %>%
   geom_density(alpha = 0.5) #Aplicamos una geometría de densidad
 ```
 
-`ggplot` automáticamente asigna una paleta de colores predeterminada. Sin embargo, podemos instalar paquetes que introducen una gama de paletas nuevas, generalmente mejores que las que tiene R. Por ejemplo `viridis` trae paletas que, además de ser lindas, están diseñadas para poder imprimirse en escala de grises y ser interpretadas por personas con daltonismo. Probemos usar una paleta de este paquete en nuestro gráfico de arriba. Primero vamos a importar la librería `viridis`, y vamos a agregarle al código anterior la capa `scale_fill_viridis_d`.
+`ggplot` automáticamente asigna una paleta de colores predeterminada. Sin embargo, podemos instalar paquetes que introducen una gama de paletas nuevas, generalmente mejores que las que tiene R. Por ejemplo `viridis` trae paletas que, además de ser lindas, están diseñadas para poder imprimirse en escala de grises y ser interpretadas por personas con daltonismo. Para explorar en profundidadad las opciones de uso con distintos tipos de variable podemos explorar [la documentación oficial del paquete](https://cran.r-project.org/web/packages/viridis/vignettes/intro-to-viridis.html). Probemos usar una paleta de este paquete en nuestro gráfico de arriba. Primero vamos a importar la librería `viridis`, y vamos a agregarle al código anterior la capa `scale_fill_viridis_d`.
 
 ```{r}
 library(viridis)
@@ -348,14 +381,15 @@ base %>%
   ggplot(aes(x=ESTADO, y=n, fill = SEXO))+
   geom_col(position = 'dodge')+
   facet_wrap(vars(REGION))+
-  coord_flip()+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90))+
         labs(
         title = "Condición de actividad por género",
         subtitle = "1° trimestre de 2019",
-        caption = "Encuesta Permanente de Hogares",
+        caption = "Fuente: Encuesta Permanente de Hogares",
         x = "Condición de actividad",
         y = "n"
-        )+
-  theme_minimal()
+        )
 ```
 
+Con esto, cerramos la clase de gráficos del curso. Sin embargo, hay muchísimo material para explorar en lo que respecta a la visualización de datos en R. Para seguir explorando, pueden tener a mano siempre el [cheat sheet de ggplot2](https://www.maths.usyd.edu.au/u/UG/SM/STAT3022/r/current/Misc/data-visualization-2.1.pdf) para refrescar las distintas opciones que le puedo pasar a un gráfico, o la [R Graph Gallery](https://r-graph-gallery.com/) para buscar inspiración de qué gráficos realizar.
