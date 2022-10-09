@@ -75,8 +75,9 @@ ggplot(tabla_resumen)+
        caption = "Fuente: EPH - 3° Trimestre 2021")+
   theme_minimal()+
   theme(text = element_text(size = 8),
-        legend.position = "top") +
-  ggsave("clase1/Intro teorica/prueba_objetividad.png")
+        legend.position = "top") 
+
+ggsave("clase1/Intro teorica/prueba_objetividad.png")
 
 
 ggplot(tabla_resumen)+
@@ -95,6 +96,7 @@ ggplot(tabla_resumen)+
        caption = "Fuente: EPH - 3° Trimestre 2021")+
   theme_minimal()+
   theme(text = element_text(size = 8),
-        legend.position = "top") +
-  ggsave("clase1/Intro teorica/contraejemplo_objetividad.png")
+        legend.position = "top") 
+
+ggsave("clase1/Intro teorica/contraejemplo_objetividad.png")
     
