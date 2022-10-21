@@ -43,7 +43,7 @@ data <- data %>% mutate(genero_usuario = str_to_lower(genero_usuario))
 ### 8. Guardar como .csv la última base generada. 
 
 write_csv(data, "data/recorridos_bici_editada.csv")
-
+  
 ### 9. Instalar un paquete que vamos a usar la próxima clase: lubridate. 
 
-install.packages(lubridate)
+install.packages("lubridate")
