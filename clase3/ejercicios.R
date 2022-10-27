@@ -9,7 +9,7 @@
 ### 4. Crear una nueva columna llamada "rango_horario" que tenga el valor "Mañana" para los recorridos que empezaron en la mañana 
 # y "Tarde" para los recorridos que empezaron en la tarde (después de las 12h). 
 
-### 5. Eliminar del dataframe las columnas con infromación de latitud y longitud. 
+### 5. Eliminar del dataframe las filas con infromación de latitud y longitud. 
 
 ### 6. Convertir los NA de las columnas "domicilio_estacion_origen" y "domicilio_estacion_destino" 
 ## en un "Sin información" 

@@ -22,7 +22,7 @@ data <- data %>% mutate(rango_horario = case_when(
   hora_salida >= 12 ~ "Tarde"
 ))
 
-### 5. Eliminar del dataframe las columnas con infromación de latitud y longitud. 
+### 5. Eliminar del dataframe las filas con infromación de latitud y longitud. 
 
 data_filtrada <- data %>% filter(is.na(lat_estacion_destino) & is.na(long_estacion_destino))
 
