@@ -49,7 +49,7 @@ La estructura librería::función (la usamos en el caso de *eph::get_microdata()
 base <- eph::get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
                             type = "individual", #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                            destfile = "clase4/eph_2019_T1.rds")  #definimos dónde se va a guardar la base. 
+                            destfile = "./eph_2019_T1.rds")  #definimos dónde se va a guardar la base. 
 #De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
   
 ```
@@ -248,7 +248,7 @@ Además de introducir esta nueva función, tomamos esta oportunidad para repasar
 base <- eph::get_microdata(year = 2019, 
                             trimester = 1, 
                             type = "individual", 
-                            destfile = "clase4/eph_2019_T1.rds") %>%  
+                            destfile = "./eph_2019_T1.rds") %>%  
   select(CODUSU, NRO_HOGAR,"SEXO" = CH04, ESTADO, CAT_INAC, CAT_OCUP, "DESC_JUBILATORIO" = PP07H, PONDERA) %>% 
   
   mutate(SEXO = case_when(SEXO == 1 ~ "Varones",
@@ -586,7 +586,7 @@ Ejemplo: tomamos la base del Ministerio de Justicia y Derechos Humanos de la Lí
 ```{r}
 library(readxl)
 
-llamados_atendidos_violencia_familiar_202202 <- read_excel("clase4/llamados-atendidos-violencia-familiar-202202.xlsx") 
+llamados_atendidos_violencia_familiar_202202 <- read_excel("./llamados-atendidos-violencia-familiar-202202.xlsx") 
 
 ```
 
@@ -608,7 +608,7 @@ Los objetos que creamos en el entorno de R existen en el entorno de R y al cerra
 El comando más simple para hacer esto es write.xlsx() del paquete *openxlsx*:
 
 ```{r}
-write.xlsx(tabla_1, file = "clase4/prueba1.xlsx")
+write.xlsx(tabla_1, file = "./prueba1.xlsx")
 ```
 
 Para guardar varios elementos en un mismo excel en distintas pestañas, recurrimos a una lista, donde indicamos para cada elemento que queramos guardar "Nombre de la pestaña" = Objeto de R.
@@ -616,7 +616,7 @@ Para guardar varios elementos en un mismo excel en distintas pestañas, recurrim
 ```{r}
 write.xlsx(list("resultado_cat_ocup"=tabla_1 ,
                 "resultado_desc_jub"=tabla_2), 
-           file = "clase4/prueba1.xlsx")
+           file = "./prueba1.xlsx")
 ```
 
 

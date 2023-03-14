@@ -41,7 +41,7 @@ Vamos a volver a trabajar con la base de EPH para encontrar la brecha salarial e
 base <- eph::get_microdata(year = 2019, 
                             trimester = 1,
                             type = "individual", 
-                            destfile = "clase6/eph_2019_T1.rds")  %>% 
+                            destfile = "./eph_2019_T1.rds")  %>% 
   organize_caes()%>%  #recodifica la variable que indica el sector de la ocupación
   select(ESTADO,"SEXO" = CH04, "Ing_Ocup_Principal"= P21, PONDIIO,caes_eph_label, "Horas" = PP3E_TOT, PONDERA) %>% 
   
@@ -423,7 +423,7 @@ crear_grafico = function(tabla){
              color = "Sexo")+
         theme(legend.position = "bottom")
   
-    ggsave(paste0("clase6/graficos/",tolower(str_replace_all(unique(tabla$sector), " ", "_")),".png"), bg = "white")
+    ggsave(paste0("./graficos/",tolower(str_replace_all(unique(tabla$sector), " ", "_")),".png"), bg = "white")
   
 }
 

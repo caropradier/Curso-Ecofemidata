@@ -8,7 +8,7 @@ library(openxlsx)
 base <- eph::get_microdata(year = 2019, #definimos el año
                            trimester = 1, #definimos el trimestre
                            type = "individual", #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                           destfile = "clase4/eph_2019_T1.rds") %>%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
+                           destfile = "./eph_2019_T1.rds") %>%  #definimos dónde se va a guardar la base. De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
   select(ESTADO,REGION,"SEXO" = CH04, "ESTADO_CIVIL" = CH07, PONDERA) %>% 
   
   mutate(ESTADO = case_when(ESTADO == 1 ~ "Ocupado",
