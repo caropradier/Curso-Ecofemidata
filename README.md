@@ -82,3 +82,8 @@ __Clase 7 - Clase de cierre__
 
 
 [![](img/Download.png)](clase7.rar)
+
+<br>
+
+
+![](img/logo_ecofeminita.png)
