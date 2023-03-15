@@ -1,4 +1,12 @@
-# Curso-Ecofemidata
+# Introducción a la programación con perspectiva feminista 
+
+## ecofemidata
+
+<br>
+
+Docentes: Laia Domenech y Carolina Pradier
+
+<br>
 
 __Clase 1 - Introducción a los datos con perspectiva feminista__
 
