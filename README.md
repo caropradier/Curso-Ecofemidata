@@ -85,5 +85,6 @@ __Clase 7 - Clase de cierre__
 
 <br>
 
-
-![](img/logo_ecofeminita.png)
+<p align="center">
+<img src="img/logo_ecofeminita.png"  width="300" height="300">
+</p>
