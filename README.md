@@ -4,7 +4,7 @@
 
 <br>
 
-Docentes: Laia Domenech y Carolina Pradier
+__Docentes__: Laia Domenech y Carolina Pradier
 
 <br>
 
@@ -19,6 +19,8 @@ En esta carpeta van a encontrar un instructivo para instalar R y RStudio.
 
 [![](img/Download.png)](clase1.rar)
 
+<br>
+
 __Clase 2 - Introducción a R base__
 
  + ¿Qué es R? 
@@ -28,6 +30,8 @@ __Clase 2 - Introducción a R base__
 
 [![](img/Download.png)](clase2.rar)
 
+<br>
+
 __Clase 3 - Introducción a tidyverse__
 
  + El mundo tidyverse
@@ -35,6 +39,8 @@ __Clase 3 - Introducción a tidyverse__
  + dplyr 
 
 [![](img/Download.png)](clase3.rar)
+
+<br>
 
 __Clase 4 - Tidyverse__
 
@@ -46,6 +52,8 @@ __Clase 4 - Tidyverse__
 
 [![](img/Download.png)](clase4.rar)
 
+<br>
+
 __Clase 5 - Visualización__
 
  + Intro a teoría de la visualización
@@ -55,12 +63,17 @@ __Clase 5 - Visualización__
 
 [![](img/Download.png)](clase5.rar)
 
+<br>
+
 __Clase 6 - Visualización de gráficos e iteraciones__
 
  + Visualizaciones interactivas
  + Iteración y funciones
 
 [![](img/Download.png)](clase6.rar)
+
+<br>
+
 
 __Clase 7 - Clase de cierre__
 
