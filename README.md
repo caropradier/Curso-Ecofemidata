@@ -4,7 +4,7 @@
 
 <br>
 
-__Docentes__: Laia Domenech y Carolina Pradier
+__Docentes__: Laia Domenech Burin y Carolina Pradier
 
 <br>
 
