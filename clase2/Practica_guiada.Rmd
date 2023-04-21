@@ -71,7 +71,7 @@ La unidad mínima que pueden contener estos objetos son los *valores*. Existen c
 
 -   `logical`: valores lógicos, un TRUE o FALSE
 
-Para guardar un objeto en R se usa el símbolo = o una flecha \<-. Por convención, se usa la flecha. A la izquierda siempre va el nombre que le vamos a asignar al objeto, y a la derecha, el valor. .
+Para guardar un objeto en R se usa el símbolo = o una flecha \<-. Por convención, se usa la flecha. A la izquierda siempre va el nombre que le vamos a asignar al objeto, y a la derecha, el valor. 
 
 ```{r}
 objeto_1 <- 55

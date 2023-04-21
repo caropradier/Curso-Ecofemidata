@@ -29,9 +29,3 @@
 # d. ¿Cuáles son los valores únicos de la columna "Species"? 
 
 # e. Cree un nuevo dataframe llamado 'setosa' que contenga otdas las filas cuya especie es Setosa. 
-
-# 3. Preparándonos para la próxima clase.
-# En este ejercicio, vamos a ver como se instalan paquetes nuevos en R instalando tidyverse, el cual utilizaremos el resto del curso.
-# Agreguen dentro del paréntesis de esta función la siguiente palabra: "tidyverse"(con comillas) y corran el código.
-
-install.packages()
