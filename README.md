@@ -17,7 +17,7 @@ __Clase 1 - Introducción a los datos con perspectiva feminista__
 
 En esta carpeta van a encontrar un instructivo para instalar R y RStudio.
 
-[![](img/Download.png)](clase1.rar)
+[![](img/Download.png)](clase1.zip)
 
 <br>
 
