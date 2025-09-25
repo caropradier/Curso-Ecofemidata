@@ -1,0 +1,54 @@
+---
+title: "Introducción a R"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+author: "EcoFemiData"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+```
+
+```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
+knitr::opts_chunk$set(echo=TRUE, message=FALSE, warning=FALSE, collapse=TRUE, highlight=TRUE, paged.print=FALSE, prompt=TRUE, strip.white=FALSE, tidy = TRUE)
+```
+
+## Intro
+
+### ¿Qué es R?
+
+-   Lenguaje de programación → **análisis** y **visualización** de datos
+-   Código abierto → esto significa que su instalación y uso sean **GRATIS**
+-   Comunidad abierta y colaborativa → hay un conjunto de **funciones básicas** al cual se le van agregando diferentes **paquetes** con funcionalidades específicas
+-   Paquetes instalables → siempre hay nuevas **funcionalidades "customizables"** para lo que queremos hacer. Los paquetes que veremos en este curso, `tidyverse` y `ggplot` son dos ejemplos de estos paquetes.
+
+## Pantalla de trabajo
+
+![Esquema de RStudio](./imgs/Interfaz_RStudio.jpg)
+
+-   El trabajo en R se hace desde el **panel de edición**, aunque también puedo escribir código desde la **consola**. Sin embargo, aquí no quedará guardado.
+
+-   Los resultados aparecen en la **consola**.
+
+-   En el **panel de salida** van a aparecer los gráficos, las pestañas de archivos y la ayuda.
+
+-   Para modificar cómo se ve el entorno de ejecución (cambiar los colores, poner en "modo oscuro") tengo que ir a **Tools -\> Global options -\> Appearance**.
+
+-   Para crear un script nuevo desde el cual trabajar, hago clic en **File -\> New File -\> R Script.**
+
+-   Para correr una línea de código, doy **Control + Enter**.
+
+-   Los objetos que generamos en R **no se guardan automáticamente en la computadora**. Tenemos que usar funciones específicas según el formato (si exportamos un dataframe, una imagen, un gif, etc).
+
+### Ayuda en R
+
+El comando básico para averiguar qué hace una función o simplemente pedir ayuda es `help("nombre de la función")` o `?("nombre de la función")`.
+
+### Mensajes de error
+
+Cuando tipeamos mal algo, cuando intentamos usar una función en un objeto que no corresponde, o, en general, nos la mandamos, R va a imprimir un **mensaje de error** en la consola. Esto no es lo mismo que un **warning**, que nos aparece también en la consola en el mismo color. Este último es nada más una advertencia de que el comando que emitimos operó de una determinada manera que quizás no nos guste, pero en general no significa que algo haya salido mal.
+
+Cuando hay un mensaje de error, lo que queríamos hacer no salió. Esto es lo más normal del mundo, por lo que, además de frustrarnos y entrar en pánico, como regla general lo que hay que hacer es pegar ese mensaje de error en Google y ver los primeros resultados. 99.9% de las veces alguien más ya tuvo ese error y lo subió a Stack Overflow o alguna otra plataforma de respuestas, y allí vamos a encontrar la forma de solucionar el problema.
+
