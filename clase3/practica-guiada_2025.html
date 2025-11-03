@@ -9,7 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
-<meta name="author" content="Carolina Pradier y Laia Domenech Burin" />
+<meta name="author" content />
 
 
 <title>Clase 3 - Introducción al tidyverse</title>
@@ -1479,7 +1479,7 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">Clase 3 - Introducción al tidyverse</h1>
-<h4 class="author">Carolina Pradier y Laia Domenech Burin</h4>
+<h4 class="author"></h4>
 
 </div>
 
@@ -1532,7 +1532,6 @@ GitHub.</li>
 <p>Para empezar a trabajar con el paquete, tenemos que introducirlo en
 la sesión con la función <code>library()</code>:</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## Warning: package &#39;lubridate&#39; was built under R version 4.3.3</code></pre>
 <p>En esta clase vamos a trabajar con la base de datos que usamos como
 insumo para el informe <a href="https://ecofeminita.com/cuanto-cuesta-menstruar-marzo22/">“¿Cuánto
 cuesta menstruar?”</a>. Vamos a importar esta base con ayuda del paquete
@@ -1549,7 +1548,7 @@ específico.</li>
 <p>Como nuestro archivo está en formato <code>csv</code>, vamos a usar
 la primera función. Llamemos al archivo desde la carpeta
 <code>data</code>:</p>
-<pre class="r"><code>df &lt;- read_csv(&#39;./data/menstru_marzo_2022.csv&#39;)</code></pre>
+<pre class="r"><code>df &lt;- read_csv(&quot;./data/menstru_marzo_2022.csv&quot;)</code></pre>
 <p>Como podrán ver, es una sintaxis simple. Simplemente indico la ruta
 donde está guardado el archivo y se lee la base. Por default, R pone la
 ruta de trabajo en la carpeta donde está guardado el documento que se
@@ -1564,12 +1563,12 @@ R me va a mostrar el código que tendría que usar para importarlo:</p>
 <div class="figcaption">Importación desde R</div>
 </div>
 <p>Démosle un vistazo a la estructura de esta base:</p>
-<pre class="r"><code>#Nombre de las columnas
+<pre class="r"><code># Nombre de las columnas
 colnames(df)</code></pre>
 <pre><code>##  [1] &quot;Categoría&quot;       &quot;Marca&quot;           &quot;Nombre&quot;          &quot;Comercio&quot;       
 ##  [5] &quot;Sucursal&quot;        &quot;Dirección&quot;       &quot;Localidad&quot;       &quot;Provincia&quot;      
 ##  [9] &quot;Precio.de.lista&quot; &quot;Region&quot;          &quot;unidades&quot;        &quot;precio_unidad&quot;</code></pre>
-<pre class="r"><code>#Cantidad de filas
+<pre class="r"><code># Cantidad de filas
 nrow(df)</code></pre>
 <pre><code>## [1] 31535</code></pre>
 <p>Esto quiere decir que tenemos 31.353 registros sobre precios de
@@ -1602,7 +1601,7 @@ provincia haríamos lo siguiente:</p>
 ##                 633                 153                 236                 395</code></pre>
 <p>Ahora, con una pipe…</p>
 <pre class="r"><code>df$Provincia %&gt;%
- table()</code></pre>
+    table()</code></pre>
 <pre><code>## .
 ##        Buenos Aires                CABA           Catamarca               Chaco 
 ##               10105                9601                  49                 234 
@@ -1617,9 +1616,9 @@ provincia haríamos lo siguiente:</p>
 ##            Santa Fe Santiago del Estero    Tierra del Fuego             Tucumán 
 ##                 633                 153                 236                 395</code></pre>
 <p>Las funciones pueden concatenarse:</p>
-<pre class="r"><code>df$Provincia%&gt;%
-        table()%&gt;%
-        prop.table()*100</code></pre>
+<pre class="r"><code>df$Provincia %&gt;%
+    table() %&gt;%
+    prop.table() * 100</code></pre>
 <pre><code>## .
 ##        Buenos Aires                CABA           Catamarca               Chaco 
 ##          32.0437609          30.4455367           0.1553829           0.7420327 
@@ -1661,7 +1660,8 @@ elegimos. Podemos elegir según nombre o posición.</li>
 <li>La forma básica de esta función es
 <code>select(nombre_de_la_columna)</code>.</li>
 </ul>
-<pre class="r"><code>select_prueba_1 &lt;- df %&gt;% select(Provincia)
+<pre class="r"><code>select_prueba_1 &lt;- df %&gt;%
+    select(Provincia)
 head(select_prueba_1)</code></pre>
 <pre><code>## # A tibble: 6 × 1
 ##   Provincia
@@ -1675,7 +1675,8 @@ head(select_prueba_1)</code></pre>
 <ul>
 <li>Puedo seleccionar más de una columna con la coma:</li>
 </ul>
-<pre class="r"><code>select_prueba_2 &lt;- df %&gt;% select(Provincia, Categoría, Marca)
+<pre class="r"><code>select_prueba_2 &lt;- df %&gt;%
+    select(Provincia, Categoría, Marca)
 
 head(select_prueba_2)</code></pre>
 <pre><code>## # A tibble: 6 × 3
@@ -1691,7 +1692,8 @@ head(select_prueba_2)</code></pre>
 <li>También se puede seleccionar un intervalo de columnas, usando el
 <code>:</code></li>
 </ul>
-<pre class="r"><code>select_prueba_3 &lt;- df %&gt;% select(Provincia, Categoría, Marca, Region:precio_unidad)
+<pre class="r"><code>select_prueba_3 &lt;- df %&gt;%
+    select(Provincia, Categoría, Marca, Region:precio_unidad)
 
 head(select_prueba_3)</code></pre>
 <pre><code>## # A tibble: 6 × 6
@@ -1707,7 +1709,8 @@ head(select_prueba_3)</code></pre>
 <li>Podemos hacer una selección por <strong>posición de la
 columna</strong>:</li>
 </ul>
-<pre class="r"><code>select_prueba_4 &lt;- df %&gt;% select(1:5)
+<pre class="r"><code>select_prueba_4 &lt;- df %&gt;%
+    select(1:5)
 
 head(select_prueba_4)</code></pre>
 <pre><code>## # A tibble: 6 × 5
@@ -1723,7 +1726,8 @@ head(select_prueba_4)</code></pre>
 <li>Se puede hacer una anti-selección (o sea, elegir todas las columnas
 menos algunas especificadas)</li>
 </ul>
-<pre class="r"><code>select_prueba_5 &lt;- df %&gt;% select(-c(Sucursal, Dirección, Localidad, Nombre))
+<pre class="r"><code>select_prueba_5 &lt;- df %&gt;%
+    select(-c(Sucursal, Dirección, Localidad, Nombre))
 
 head(select_prueba_5)</code></pre>
 <pre><code>## # A tibble: 6 × 8
@@ -1750,7 +1754,8 @@ string que le pasemos.</li>
 que indicamos.</li>
 </ul></li>
 </ul>
-<pre class="r"><code>select_prueba_6 &lt;- df %&gt;% select(contains(&quot;unidad&quot;))
+<pre class="r"><code>select_prueba_6 &lt;- df %&gt;%
+    select(contains(&quot;unidad&quot;))
 
 head(select_prueba_6)</code></pre>
 <pre><code>## # A tibble: 6 × 2
@@ -1764,7 +1769,8 @@ head(select_prueba_6)</code></pre>
 ## 6        8          13.1</code></pre>
 <p>Por último, puedo renombrar la columna dentro de la selección
 indicando <code>select(nombre_nuevo = nombre_viejo)</code></p>
-<pre class="r"><code>select_prueba_7 &lt;- df %&gt;% select(prov = Provincia)
+<pre class="r"><code>select_prueba_7 &lt;- df %&gt;%
+    select(prov = Provincia)
 head(select_prueba_7)</code></pre>
 <pre><code>## # A tibble: 6 × 1
 ##   prov 
@@ -1793,7 +1799,8 @@ y podemos usar <code>%in%</code> para chequear que un valor aparezca en
 un vector.</li>
 </ul>
 <p>Supongamos que queremos quedarnos con los registros de tampones:</p>
-<pre class="r"><code>base_filtrada_1 &lt;- df %&gt;% filter(Categoría == &quot;tampones&quot;)
+<pre class="r"><code>base_filtrada_1 &lt;- df %&gt;%
+    filter(Categoría == &quot;tampones&quot;)
 
 table(df$Categoría)</code></pre>
 <pre><code>## 
@@ -1805,7 +1812,8 @@ table(df$Categoría)</code></pre>
 ##     8310</code></pre>
 <p>Los condicionales también pueden combinarse. Podríamos traer todos
 los registros de las regiones NEA y NOA:</p>
-<pre class="r"><code>base_filtrada_3 &lt;- df %&gt;% filter(Region == &quot;NOA&quot; | Region == &quot;NEA&quot;)
+<pre class="r"><code>base_filtrada_3 &lt;- df %&gt;%
+    filter(Region == &quot;NOA&quot; | Region == &quot;NEA&quot;)
 
 table(df$Region)</code></pre>
 <pre><code>## 
@@ -1818,7 +1826,8 @@ table(df$Region)</code></pre>
 <p>También podemos combinar los operadores lógicos para hacer un
 filtrado por condiciones múltiples. Por ejemplo, si quisiéramos todos
 los registros de toallitas en el NOA y el NEA, hacemos lo siguiente:</p>
-<pre class="r"><code>base_filtrada_4 &lt;- df  %&gt;% filter(Region %in% c(&quot;NOA&quot;, &quot;NEA&quot;) &amp; Categoría == &quot;tampones&quot;)
+<pre class="r"><code>base_filtrada_4 &lt;- df %&gt;%
+    filter(Region %in% c(&quot;NOA&quot;, &quot;NEA&quot;) &amp; Categoría == &quot;tampones&quot;)
 
 table(base_filtrada_4$Region, base_filtrada_4$Categoría)</code></pre>
 <pre><code>##      
@@ -1830,7 +1839,8 @@ sólo con las filas que tienen valores -es decir, borrar los NA.</p>
 <p>Vamos a borrar los casos que tienen NA en la categoría
 <code>Comercio</code>. Probemos que pasa si usamos el operador
 <code>!=</code></p>
-<pre class="r"><code>base_filtrada_5 &lt;- df  %&gt;% filter(Comercio != NA) 
+<pre class="r"><code>base_filtrada_5 &lt;- df %&gt;%
+    filter(Comercio != NA)
 nrow(base_filtrada_5)</code></pre>
 <pre><code>## [1] 0</code></pre>
 <p>¡Nos borró todas las variables! Pero esto no está bien, ya que vimos
@@ -1839,7 +1849,8 @@ que esta columna tenía varios valores. ¿Qué sucedió?</p>
 operación con uno de ellos va a devolver otro NA, y es por esto que no
 debemos trabajar con operadores a la hora de filtrarlos, sino que
 debemos usar la función <code>is.na()</code></p>
-<pre class="r"><code>base_filtrada_5 &lt;- df  %&gt;% filter(!is.na(Comercio))
+<pre class="r"><code>base_filtrada_5 &lt;- df %&gt;%
+    filter(!is.na(Comercio))
 nrow(base_filtrada_5)</code></pre>
 <pre><code>## [1] 31535</code></pre>
 </div>
@@ -1849,7 +1860,9 @@ nrow(base_filtrada_5)</code></pre>
 <li>Esta función solo requiere indicar
 <code>NOMBRE_NUEVO = NOMBRE_VIEJO</code></li>
 </ul>
-<pre class="r"><code>data_rename &lt;- df %&gt;% rename(precio_lista = Precio.de.lista) %&gt;% select(Categoría, precio_lista, unidades, precio_unidad)
+<pre class="r"><code>data_rename &lt;- df %&gt;%
+    rename(precio_lista = Precio.de.lista) %&gt;%
+    select(Categoría, precio_lista, unidades, precio_unidad)
 
 head(data_rename)</code></pre>
 <pre><code>## # A tibble: 6 × 4
@@ -1876,7 +1889,8 @@ tanto de aleja cada observación de la media.</p>
 ahora) no vimos cómo hacer operaciones sobre grupos, vamos a usar la
 <code>base_filtrada_1</code> que tenía nada más los precios de
 tampones.</p>
-<pre class="r"><code>base_filtrada_1 &lt;- base_filtrada_1 %&gt;% mutate(diferencia_precios = precio_unidad-mean(precio_unidad)) 
+<pre class="r"><code>base_filtrada_1 &lt;- base_filtrada_1 %&gt;%
+    mutate(diferencia_precios = precio_unidad - mean(precio_unidad))
 
 summary(base_filtrada_1$diferencia_precios)</code></pre>
 <pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
@@ -1900,13 +1914,10 @@ valores que no cumplen ninguna de las condiciones. Si no lo indico, esas
 filas adoptarán el valor NA por default.</p>
 <p>Supongamos que queremos agrupar los productos en dos grandes grupos:
 si su precio está por debajo de la media o por arriba de la media.</p>
-<pre class="r"><code>base_filtrada_1 &lt;- base_filtrada_1 %&gt;% mutate(
-        grupo_precios = case_when(
-          diferencia_precios &lt; 0 ~ &quot;Debajo de la media&quot;,
-          diferencia_precios &gt; 0 ~ &quot;Encima de la media&quot;,
-          diferencia_precios == 0 ~ &quot;Igual a la media&quot;
-          )
-        )
+<pre class="r"><code>base_filtrada_1 &lt;- base_filtrada_1 %&gt;%
+    mutate(grupo_precios = case_when(diferencia_precios &lt; 0 ~ &quot;Debajo de la media&quot;,
+        diferencia_precios &gt; 0 ~ &quot;Encima de la media&quot;, diferencia_precios == 0 ~
+            &quot;Igual a la media&quot;))
 
 table(base_filtrada_1$grupo_precios)</code></pre>
 <pre><code>## 

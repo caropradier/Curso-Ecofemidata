@@ -4,7 +4,7 @@ output:
   html_document:
     toc: TRUE
     toc_float: TRUE
-author: "Carolina Pradier y Laia Domenech Burin"
+author: ""
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 ---
 
@@ -48,8 +48,9 @@ La estructura librería::función (la usamos en el caso de *eph::get_microdata()
  
 base <- eph::get_microdata(year = 2019, #definimos el año
                             trimester = 1, #definimos el trimestre
-                            type = "individual", #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
-                            destfile = "./eph_2019_T1.rds")  #definimos dónde se va a guardar la base. 
+                            type = "individual" #definimos el tipo de base (el INDEC brinda la base a nivel hogar y a nivel individual)
+                            #,destfile = "./eph_2019_T1.rds" #opcional: definimos dónde se va a guardar la base. 
+                           )  
 #De esta forma, cada vez que utilicemos este script no tenemos que volver a descargar la base
   
 ```
@@ -247,8 +248,9 @@ Además de introducir esta nueva función, tomamos esta oportunidad para repasar
  
 base <- eph::get_microdata(year = 2019, 
                             trimester = 1, 
-                            type = "individual", 
-                            destfile = "./eph_2019_T1.rds") %>%  
+                            type = "individual"
+                            #,destfile = "./eph_2019_T1.rds"
+                           ) %>%  
   select(CODUSU, NRO_HOGAR,"SEXO" = CH04, ESTADO, CAT_INAC, CAT_OCUP, "DESC_JUBILATORIO" = PP07H, PONDERA) %>% 
   
   mutate(SEXO = case_when(SEXO == 1 ~ "Varones",

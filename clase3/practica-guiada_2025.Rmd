@@ -4,7 +4,7 @@ output:
   html_document:
     toc: TRUE
     toc_float: TRUE
-author: "Carolina Pradier y Laia Domenech Burin"
+author: ""
 ---
 
 ```{r setup, include=FALSE}
